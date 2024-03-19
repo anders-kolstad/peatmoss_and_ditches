@@ -3,8 +3,8 @@ project:
   output-dir: _book
   
 book:
-  title: "This is the title"
-  author: "Kari Nordmann"
+  title: "Analysing the effect of bog ditches on Sphagnum communities"
+  author: "Anders Kolstad"
   description: | 
     Add some description here if you like.
   repo-url: https://github.com/NINAnor/NINA-ebook-template
@@ -13,9 +13,8 @@ book:
   sharing: [twitter, facebook, linkedin]
   chapters:
     - index.qmd
-    - part: my-first-book.qmd
-      chapters: 
-        - hello-world.qmd
+    - ch_data_exploration.qmd
+    - ch_causal_model.qmd
   appendices:
     - appendix-notes.qmd
     

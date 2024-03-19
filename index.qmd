@@ -2,7 +2,7 @@
 bibliography: references.bib
 ---
 
-## Welcome {.unnumbered}
+## Introduction {#intro}
 
 Welcome splash page! Provide an overview of the book.
 
