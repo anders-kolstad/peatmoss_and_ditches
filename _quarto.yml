@@ -5,8 +5,6 @@ project:
 book:
   title: "Analysing the effect of bog ditches on Sphagnum communities"
   author: "Anders Kolstad"
-  description: | 
-    Add some description here if you like.
   repo-url: https://github.com/NINAnor/NINA-ebook-template
   repo-branch: main
   repo-actions: [edit]
@@ -23,8 +21,12 @@ format:
     theme: 
     - cosmo
     - NINAstyle.scss
-    
+    code-fold: true
     code-link: true
 
 bibliography: references.bib
 csl: NINArefStyle.csl
+
+execute:
+  warning: false
+  message: false

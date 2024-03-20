@@ -2,26 +2,79 @@
 bibliography: references.bib
 ---
 
-## Introduction {#intro}
+# Introduction {#intro}
 
-Welcome splash page! Provide an overview of the book.
+This web page documents the analysis for for a paper by 
+[Marte Fandrem](https://github.com/martef)
+on the effects of hydrological disturbance on the growth of Sphagnum
+mosses on a Norwegian bog.
 
-Sample evaluation of R and Python in a side-by-side manner:
+The bog is a relatively large ombrotrophic bog previously used for peat 
+extraction, and also drained and used for forest plantations. 
 
-::: {layout-ncol="2"}
-#### R
+Sphagnum growth was measured using the cranked wire technique on permanent
+vegetation quadrats (n = 28) from 2017 to 2022 (5 growing seasons). 
+Each vegetation quadrat has 16 points (i.e. pins) and each pin was measured up 
+to 4 times on each sampling occasion (on each side and by different people).
+The first 18 vegetation plots were initiated in 2017 and are paired with 
+water table well that log the water table depth. 
+These vegetation plots are situated in homogeneous vegetation types (bog lawns),
+but with varying distance to disturbances (extraction sites and ditches).
+The quadrats numbered 18-28 were initiated in 2021 and a placed relatively
+for from the hydrological disturbances, but in varying communities (hollows and
+hummoks).
 
-```{r}
-my_list = list(1, 2, 3)
-typeof(my_list)
+```{r setup}
+#| code-summary: "Load packages"
+library(tidyverse)
+library(sf)
+library(tmap)
 ```
 
-#### Python
 
-```{python}
-my_list = [1, 2, 3]
-type(my_list)
+```{r mapData}
+#| code-summary: "Import data"
+path    <- "data/shapeFiles/"
+ditches <- sf::read_sf(paste0(path, "ditches/grofter.shp"))
+massifs  <- sf::read_sf(paste0(path, "massifs/hostadmyra_myrmassiv.shp")) 
+
+#extrSites <- sf::read_sf(paste0(path, "peatExtractionSites/Torvtak.shp"))
+# This data is the same as the masifs.
+
+quadrats <- sf::read_sf(paste0(path, "vegetationQuadrats1/veipunkter_vannbronner_ruter_2017.shp")) |>
+  bind_rows(sf::read_sf(paste0(path, "vegetationQuadrats2/vegetasjonsruter_19-30.shp")))
 ```
+
+```{r studyMap}
+#| fig.cap: "Map of study area. Green circles are permanent vegetation quadrats.
+#| The shades of grey indicator different bog massifs."
+#| code-summary: "Create map"
+#| cache: true
+tm_shape(massifs) +
+  tm_polygons(col = "Name",
+              palette = c("grey60", "grey70", "grey80"),
+              legend.show=F) +
+  tm_shape(ditches |>
+             mutate("Ditch age" = case_when(
+               Name == "Eldre" ~ "Old",
+               Name == "Nyere" ~ "More recent",
+               .default = "Old"
+             ))) +
+  tm_lines(col = "Ditch age",
+           lwd=2,
+           palette = c("red", "orange")) +
+  #tm_shape(extrSites) +
+  #tm_polygons()
+  tm_shape(quadrats) +
+  tm_dots(size = 2,
+          shape=21,
+          col = "green",
+          alpha = 0.5)  +
+  tm_scale_bar(position = c("left", "bottom")) +
+  tm_compass()
+```
+
+::: {.callout.note}
+The shape file with the position of vegetation qadrats do not contain the
+qadrat ID for all cases. We need to add that.
 :::
-
-See [Chapter 1](#sec-hello-world) for how to plot and cross reference figures. We cannot make cross referanceble objects on this page, because it is an *unnumbered* page, and you can't cross reference to things in unnumbered pages.
