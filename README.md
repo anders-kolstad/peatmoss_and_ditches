@@ -1,10 +1,15 @@
 Years: 2017-2022 
+
 Main response variable: moss height
+
 Main explanatory variables: Disturbance category, yearly climate variables, water table depth
 
 Species data only for 2020-2022
+
 18 quadrats 2017-2020, each with its own adjacent water table well; 28 quadrats for 2021 and 2022
+
 Water table depth for all years, but maybe some data missing from autumn 2019.
+
 Climate data from local weather stations.
 
 _Nr 29 and 30 should be exluded from 2021 and 2022_
