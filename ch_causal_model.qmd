@@ -1,0 +1,14 @@
+# Causal model {#causal-model}
+
+
+```{mermaid}
+flowchart LR
+    A[Distance to ditch]-->B
+    B-->C
+    B-->D
+    C-->D
+    click A callback "Tooltip for a callback"
+    click B "https://www.github.com" "This is a tooltip for a link"
+    click C call callback() "Tooltip for a callback"
+    click D href "https://www.github.com" "This is a tooltip for a link"
+```

@@ -1,0 +1,56 @@
+# Data exploration and cleaning {#data-exp}
+
+```{r setup}
+#| code-summary: "Load packages"
+library(tidyverse)
+library(readxl)
+library(DT)
+```
+
+## A first look
+
+The data set is located on GitHub i na `xlsx` format.
+The data are split into different tabs based on year.
+
+```{r readData}
+#| code-summary: "Import data set"
+
+dat <- read_excel("data/growthData.xlsx", 
+    sheet = "y2017") |>
+  bind_rows(
+    y2018 <- read_excel("data/growthData.xlsx", 
+    sheet = "y2018") |>
+  mutate(DateFALL = as.Date(DateFALL, "%d.%m.%Y"))) |>
+  bind_rows(
+    read_excel("data/growthData.xlsx", 
+    sheet = "y2019") |>
+    mutate(DateSPRING = as.Date(DateSPRING, "%d/%m/%Y"),
+           DateSUMMER = as.Date(DateSUMMER, "%d/%m/%Y"),
+           DateFALL = as.Date(DateFALL, "%d/%m/%Y"))
+  ) |>
+  bind_rows(
+    read_excel("data/growthData.xlsx", 
+    sheet = "y2020") |>
+    mutate(DateSPRING = as.Date(DateSPRING, "%d/%m/%Y"))
+  ) |>
+  bind_rows(
+    read_excel("data/growthData.xlsx", 
+    sheet = "y2021") |>
+      # data had explicit NAs in cells that were read as text:
+    mutate(across(starts_with("Height"), as.numeric))
+  ) |>
+  bind_rows(
+    read_excel("data/growthData.xlsx", 
+    sheet = "y2022") |>
+    mutate(across(starts_with("Height"), as.numeric),
+           Plot_no = as.numeric(Plot_no),
+           Pin_no = as.numeric(Pin_no))
+  )
+```
+
+Here's what the data looks like when I just row bind them:
+
+```{r}
+DT::datatable(dat)
+```
+

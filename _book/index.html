@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.4.543">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<meta name="author" content="Kari Nordmann">
+<meta name="author" content="Anders Kolstad">
 <meta name="description" content="Add some description here if you like.">
-<title>This is the title</title>
+<title>Analysing the effect of bog ditches on Sphagnum communities</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -62,7 +62,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./my-first-book.html" rel="next">
+<link href="./ch_data_exploration.html" rel="next">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -106,7 +106,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Welcome</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></a></li></ol></nav>
         <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -117,7 +117,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto"><div class="pt-lg-2 mt-2 text-left sidebar-header">
     <div class="sidebar-title mb-0 py-0">
-      <a href="./">This is the title</a> 
+      <a href="./">Analysing the effect of bog ditches on Sphagnum communities</a> 
         <div class="sidebar-tools-main">
     <a href="https://github.com/NINAnor/NINA-ebook-template" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
     <div class="dropdown">
@@ -156,35 +156,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Welcome</span></a>
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch_data_exploration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Data exploration and cleaning</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ch_causal_model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Causal model</span></span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a href="./my-first-book.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Part 1: Write the book</span></a>
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">Appendices</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">
-<li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./hello-world.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">The Hello World Example</span></span></a>
-  </div>
-</li>
-      </ul>
-</li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
- <span class="menu-text">Appendices</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./appendix-notes.html" class="sidebar-item-text sidebar-link">
@@ -201,12 +196,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <nav id="TOC" role="doc-toc" class="toc-active"><h2 id="toc-title">Table of contents</h2>
    
   <ul>
-<li><a href="#welcome" id="toc-welcome" class="nav-link active" data-scroll-target="#welcome">Welcome</a></li>
+<li><a href="#intro" id="toc-intro" class="nav-link active" data-scroll-target="#intro"><span class="header-section-number">0.1</span> Introduction</a></li>
   </ul><div class="toc-actions"><ul><li><a href="https://github.com/NINAnor/NINA-ebook-template/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><div class="quarto-title">
-<h1 class="title">This is the title</h1>
+<h1 class="title">Analysing the effect of bog ditches on Sphagnum communities</h1>
 </div>
 
 <div>
@@ -221,7 +216,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Kari Nordmann </p>
+             <p>Anders Kolstad </p>
           </div>
   </div>
     
@@ -231,7 +226,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><section id="welcome" class="level2 unnumbered"><h2 class="unnumbered anchored" data-anchor-id="welcome">Welcome</h2>
+</header><section id="intro" class="level2" data-number="0.1"><h2 data-number="0.1" class="anchored" data-anchor-id="intro">
+<span class="header-section-number">0.1</span> Introduction</h2>
 <p>Welcome splash page! Provide an overview of the book.</p>
 <p>Sample evaluation of R and Python in a side-by-side manner:</p>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>my_list <span class="ot">=</span> <span class="fu">list</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span>
@@ -240,18 +236,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">type</span>(my_list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="quarto-layout-panel" data-layout-ncol="2">
 <div class="quarto-layout-row">
-<section id="r" class="level4 cell quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;"><h4 class="anchored" data-anchor-id="r">R</h4>
+<section id="r" class="level4 cell quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;" data-number="0.1.0.1"><h4 data-number="0.1.0.1" class="anchored" data-anchor-id="r">
+<span class="header-section-number">0.1.0.1</span> R</h4>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "list"</code></pre>
 </div>
-</section><section id="python" class="level4 cell quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;"><h4 class="anchored" data-anchor-id="python">Python</h4>
+</section><section id="python" class="level4 cell quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;" data-number="0.1.0.2"><h4 data-number="0.1.0.2" class="anchored" data-anchor-id="python">
+<span class="header-section-number">0.1.0.2</span> Python</h4>
 <div class="cell-output cell-output-stdout">
 <pre><code>&lt;class 'list'&gt;</code></pre>
 </div>
 </section>
 </div>
 </div>
-<p>See <a href="hello-world.html">Chapter 1</a> for how to plot and cross reference figures. We cannot make cross referanceble objects on this page, because it is an <em>unnumbered</em> page, and you can’t cross reference to things in unnumbered pages.</p>
+<p>See <a href="#sec-hello-world">Chapter 1</a> for how to plot and cross reference figures. We cannot make cross referanceble objects on this page, because it is an <em>unnumbered</em> page, and you can’t cross reference to things in unnumbered pages.</p>
 
 
 </section></main><!-- /main --><script id="quarto-html-after-body" type="application/javascript">
@@ -643,8 +641,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script><nav class="page-navigation"><div class="nav-page nav-page-previous">
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./my-first-book.html" class="pagination-link" aria-label="Part 1: Write the book">
-        <span class="nav-page-text">Part 1: Write the book</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./ch_data_exploration.html" class="pagination-link" aria-label="<span class='chapter-number'>2</span>&nbsp; <span class='chapter-title'>Data exploration and cleaning</span>">
+        <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Data exploration and cleaning</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

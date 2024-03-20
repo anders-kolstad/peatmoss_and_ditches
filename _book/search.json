@@ -2,11 +2,11 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "This is the title",
+    "title": "Analysing the effect of bog ditches on Sphagnum communities",
     "section": "",
-    "text": "Welcome\nWelcome splash page! Provide an overview of the book.\nSample evaluation of R and Python in a side-by-side manner:\nSee Chapter 1 for how to plot and cross reference figures. We cannot make cross referanceble objects on this page, because it is an unnumbered page, and you can’t cross reference to things in unnumbered pages.",
+    "text": "0.1 Introduction\nWelcome splash page! Provide an overview of the book.\nSample evaluation of R and Python in a side-by-side manner:\nSee Chapter 1 for how to plot and cross reference figures. We cannot make cross referanceble objects on this page, because it is an unnumbered page, and you can’t cross reference to things in unnumbered pages.",
     "crumbs": [
-      "Welcome"
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
     ]
   },
   {
@@ -60,6 +60,56 @@
     "crumbs": [
       "Appendices",
       "<span class='chapter-number'>A</span>  <span class='chapter-title'>Additional Notes</span>"
+    ]
+  },
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "This is the title",
+    "section": "",
+    "text": "my_list = list(1, 2, 3)\ntypeof(my_list)\nmy_list = [1, 2, 3]\ntype(my_list)\n\n\nR\n\n[1] \"list\"\n\nPython\n\n&lt;class 'list'&gt;",
+    "crumbs": [
+      "Introduction"
+    ]
+  },
+  {
+    "objectID": "ch_data_exploration.html",
+    "href": "ch_data_exploration.html",
+    "title": "2  Data exploration and cleaning",
+    "section": "",
+    "text": "Sample additional page",
+    "crumbs": [
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Data exploration and cleaning</span>"
+    ]
+  },
+  {
+    "objectID": "index.html#intro",
+    "href": "index.html#intro",
+    "title": "Analysing the effect of bog ditches on Sphagnum communities",
+    "section": "",
+    "text": "my_list = list(1, 2, 3)\ntypeof(my_list)\nmy_list = [1, 2, 3]\ntype(my_list)\n\n\n\n0.1.0.1 R\n\n[1] \"list\"\n\n\n0.1.0.2 Python\n\n&lt;class 'list'&gt;",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "ch_causal_model.html",
+    "href": "ch_causal_model.html",
+    "title": "3  Causal model",
+    "section": "",
+    "text": "flowchart LR\n    A[Distance to ditch]--&gt;B\n    B--&gt;C\n    B--&gt;D\n    C--&gt;D\n    click A callback \"Tooltip for a callback\"\n    click B \"https://www.github.com\" \"This is a tooltip for a link\"\n    click C call callback() \"Tooltip for a callback\"\n    click D href \"https://www.github.com\" \"This is a tooltip for a link\"",
+    "crumbs": [
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Causal model</span>"
+    ]
+  },
+  {
+    "objectID": "ch_causal_model.html#figures-and-cross-referencing",
+    "href": "ch_causal_model.html#figures-and-cross-referencing",
+    "title": "3  Causal model",
+    "section": "",
+    "text": "Table 3.1: My Table\n\n\n\nAnimal\nColour\nSize\n\n\n\nBear\nBrown\nBig\n\n\nWolf\nGrey\nBig\n\n\nLynx\nOrange?\nBig\n\n\n\n\n\n\n\n\nReferences\n\n\n\n\nArvesen, A., Cherubini, F., Serrano, G. del A., Astrup, R., Becidan, M., Belbo, H., Goile, F., Grytli, T., Guest, G., Lausselet, C., Rørstad, P.K., Rydså, L., Seljeskog, M., Skreiberg, Ø., Vezhapparambu, S., and Strømman, A.H. 2018. Cooling aerosols and changes in albedo counteract warming from CO 2 and black carbon from forest bioenergy in norway. Scientific Reports 8(September 2017): 1–13. doi:10.1038/s41598-018-21559-8.",
+    "crumbs": [
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Causal model</span>"
     ]
   }
 ]
