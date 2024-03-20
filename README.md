@@ -1,4 +1,4 @@
-Years: 2017-2022
+Years: 2017-2022 
 Main response variable: moss height
 Main explanatory variables: Disturbance category, yearly climate variables, water table depth
 
