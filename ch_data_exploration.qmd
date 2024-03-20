@@ -1,5 +1,12 @@
 # Data exploration and cleaning {#data-exp}
 
+```{r setup}
+#| code-summary: "Load packages"
+library(tidyverse)
+library(readxl)
+library(DT)
+```
+
 ## A first look
 
 The data set is located on GitHub i na `xlsx` format.
@@ -39,5 +46,11 @@ dat <- read_excel("data/growthData.xlsx",
            Plot_no = as.numeric(Plot_no),
            Pin_no = as.numeric(Pin_no))
   )
+```
+
+Here's what the data looks like when I just row bind them:
+
+```{r}
+DT::datatable(dat)
 ```
 
