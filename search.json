@@ -2,53 +2,31 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "This is the title",
+    "title": "Analysing the effect of bog ditches on Sphagnum communities",
     "section": "",
-    "text": "Welcome\nWelcome splash page! Provide an overview of the book.\nSample evaluation of R and Python in a side-by-side manner:\nSee Chapter 1 for how to plot and cross reference figures. We cannot make cross referanceble objects on this page, because it is an unnumbered page, and you can’t cross reference to things in unnumbered pages.",
+    "text": "1 Introduction\nThis web page documents the analysis for for a paper by Marte Fandrem on the effects of hydrological disturbance on the growth of Sphagnum mosses on a Norwegian bog.\nThe bog is a relatively large ombrotrophic bog previously used for peat extraction, and also drained and used for forest plantations.\nSphagnum growth was measured using the cranked wire technique on permanent vegetation quadrats (n = 28) from 2017 to 2022 (5 growing seasons). Each vegetation quadrat has 16 points (i.e. pins) and each pin was measured up to 4 times on each sampling occasion (on each side and by different people). The first 18 vegetation plots were initiated in 2017 and are paired with water table well that log the water table depth. These vegetation plots are situated in homogeneous vegetation types (bog lawns), but with varying distance to disturbances (extraction sites and ditches). The quadrats numbered 18-28 were initiated in 2021 and a placed relatively for from the hydrological disturbances, but in varying communities (hollows and hummoks).\n\n\nLoad packages\nlibrary(tidyverse)\nlibrary(sf)\nlibrary(tmap)\n\n\n\n\nImport data\npath    &lt;- \"data/shapeFiles/\"\nditches &lt;- sf::read_sf(paste0(path, \"ditches/grofter.shp\"))\nmassifs  &lt;- sf::read_sf(paste0(path, \"massifs/hostadmyra_myrmassiv.shp\")) \n\n#extrSites &lt;- sf::read_sf(paste0(path, \"peatExtractionSites/Torvtak.shp\"))\n# This data is the same as the masifs.\n\nquadrats &lt;- sf::read_sf(paste0(path, \"vegetationQuadrats1/veipunkter_vannbronner_ruter_2017.shp\")) |&gt;\n  bind_rows(sf::read_sf(paste0(path, \"vegetationQuadrats2/vegetasjonsruter_19-30.shp\")))\n\n\n\n\nCreate map\ntm_shape(massifs) +\n  tm_polygons(col = \"Name\",\n              palette = c(\"grey60\", \"grey70\", \"grey80\"),\n              legend.show=F) +\n  tm_shape(ditches |&gt;\n             mutate(\"Ditch age\" = case_when(\n               Name == \"Eldre\" ~ \"Old\",\n               Name == \"Nyere\" ~ \"More recent\",\n               .default = \"Old\"\n             ))) +\n  tm_lines(col = \"Ditch age\",\n           lwd=2,\n           palette = c(\"red\", \"orange\")) +\n  #tm_shape(extrSites) +\n  #tm_polygons()\n  tm_shape(quadrats) +\n  tm_dots(size = 2,\n          shape=21,\n          col = \"green\",\n          alpha = 0.5)  +\n  tm_scale_bar(position = c(\"left\", \"bottom\")) +\n  tm_compass()\n\n\n\n\n\nMap of study area. Green circles are permanent vegetation quadrats. The shades of grey indicator different bog massifs.\n\n\n\n\n\nThe shape file with the position of vegetation qadrats do not contain the qadrat ID for all cases. We need to add that.",
     "crumbs": [
-      "Welcome"
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
     ]
   },
   {
-    "objectID": "index.html#welcome",
-    "href": "index.html#welcome",
-    "title": "This is the title",
+    "objectID": "ch_data_exploration.html",
+    "href": "ch_data_exploration.html",
+    "title": "2  Data exploration and cleaning",
     "section": "",
-    "text": "my_list = list(1, 2, 3)\ntypeof(my_list)\nmy_list = [1, 2, 3]\ntype(my_list)\n\n\n\nR\n\n[1] \"list\"\n\n\n\nPython\n\n&lt;class 'list'&gt;",
+    "text": "2.1 A first look\nThe data set is located on GitHub i na xlsx format. The data are split into different tabs based on year.\nImport data set\ndat &lt;- read_excel(\"data/growthData.xlsx\", \n    sheet = \"y2017\") |&gt;\n  bind_rows(\n    y2018 &lt;- read_excel(\"data/growthData.xlsx\", \n    sheet = \"y2018\") |&gt;\n  mutate(DateFALL = as.Date(DateFALL, \"%d.%m.%Y\"))) |&gt;\n  bind_rows(\n    read_excel(\"data/growthData.xlsx\", \n    sheet = \"y2019\") |&gt;\n    mutate(DateSPRING = as.Date(DateSPRING, \"%d/%m/%Y\"),\n           DateSUMMER = as.Date(DateSUMMER, \"%d/%m/%Y\"),\n           DateFALL = as.Date(DateFALL, \"%d/%m/%Y\"))\n  ) |&gt;\n  bind_rows(\n    read_excel(\"data/growthData.xlsx\", \n    sheet = \"y2020\") |&gt;\n    mutate(DateSPRING = as.Date(DateSPRING, \"%d/%m/%Y\"))\n  ) |&gt;\n  bind_rows(\n    read_excel(\"data/growthData.xlsx\", \n    sheet = \"y2021\") |&gt;\n      # data had explicit NAs in cells that were read as text:\n    mutate(across(starts_with(\"Height\"), as.numeric))\n  ) |&gt;\n  bind_rows(\n    read_excel(\"data/growthData.xlsx\", \n    sheet = \"y2022\") |&gt;\n    mutate(across(starts_with(\"Height\"), as.numeric),\n           Plot_no = as.numeric(Plot_no),\n           Pin_no = as.numeric(Pin_no))\n  )\nHere’s what the data looks like when I just row bind them:\nCode\nDT::datatable(dat)",
     "crumbs": [
-      "Welcome"
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Data exploration and cleaning</span>"
     ]
   },
   {
-    "objectID": "my-first-book.html",
-    "href": "my-first-book.html",
-    "title": "Part 1: Write the book",
+    "objectID": "ch_causal_model.html",
+    "href": "ch_causal_model.html",
+    "title": "3  Causal model",
     "section": "",
-    "text": "Sample additional page",
+    "text": "flowchart LR\n    A[Distance to ditch]--&gt;B\n    B--&gt;C\n    B--&gt;D\n    C--&gt;D\n    click A callback \"Tooltip for a callback\"\n    click B \"https://www.github.com\" \"This is a tooltip for a link\"\n    click C call callback() \"Tooltip for a callback\"\n    click D href \"https://www.github.com\" \"This is a tooltip for a link\"",
     "crumbs": [
-      "Part 1: Write the book"
-    ]
-  },
-  {
-    "objectID": "hello-world.html",
-    "href": "hello-world.html",
-    "title": "1  The Hello World Example",
-    "section": "",
-    "text": "1.1 Figures and cross referencing\nYou can cross reference figures and tables easily. See for example Figure 1.1, or if this figure was in the supplementary, you could add a custom prefix and cite it as Figure S 1.1 .\nYou can also cross reference chapters, for example with a hyper link like this, or directly, like Appendix A.\nplot(cars)\n\n\n\n\n\n\n\nFigure 1.1: This is a figure caption\nHere’s a simple markdown generated table Table 1.1:\nFor adding reference, quarto work great with Zotero. If you are in RStudio, just type \\@ and you will be able to search your Zotero library. When you add a reference, it will automatically be added to the references.bib file. Here’s a reference to a paper (Arvesen et al. 2018).\nFor general Quarto help, see here, and for Quarto books, see here.",
-    "crumbs": [
-      "Part 1: Write the book",
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>The Hello World Example</span>"
-    ]
-  },
-  {
-    "objectID": "hello-world.html#figures-and-cross-referencing",
-    "href": "hello-world.html#figures-and-cross-referencing",
-    "title": "1  The Hello World Example",
-    "section": "",
-    "text": "Table 1.1: My Table\n\n\n\n\n\nAnimal\nColour\nSize\n\n\n\n\nBear\nBrown\nBig\n\n\nWolf\nGrey\nBig\n\n\nLynx\nOrange?\nBig\n\n\n\n\n\n\n\n\n\nReferences\n\n\n\n\nArvesen, A., Cherubini, F., Serrano, G. del A., Astrup, R., Becidan, M., Belbo, H., Goile, F., Grytli, T., Guest, G., Lausselet, C., Rørstad, P.K., Rydså, L., Seljeskog, M., Skreiberg, Ø., Vezhapparambu, S., and Strømman, A.H. 2018. Cooling aerosols and changes in albedo counteract warming from CO 2 and black carbon from forest bioenergy in norway. Scientific Reports 8(September 2017): 1–13. doi:10.1038/s41598-018-21559-8.",
-    "crumbs": [
-      "Part 1: Write the book",
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>The Hello World Example</span>"
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Causal model</span>"
     ]
   },
   {
