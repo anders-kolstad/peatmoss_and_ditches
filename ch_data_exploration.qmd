@@ -5,9 +5,10 @@
 library(tidyverse)
 library(readxl)
 library(DT)
+library(ggplot2)
 ```
 
-## A first look
+## Import and compile data
 
 The data set is located on GitHub i na `xlsx` format.
 The data are split into different tabs based on year.
@@ -48,9 +49,142 @@ dat <- read_excel("data/growthData.xlsx",
   )
 ```
 
-Here's what the data looks like when I just row bind them:
+Here's what the data looks like after I just row bind them:
 
 ```{r}
 DT::datatable(dat)
+```
+
+
+I need to make this into a long format. 
+There are multiple date and height columns that I want to combine.
+I will split the spring and fall data (ignoring the summer data) 
+into separate sets, and then combine them again later. 
+
+```{r}
+#| code-summary: "Turn into long format"
+
+# Spring data
+dat_spring <- dat |>
+  select(-contains(c("FALL", "SUMMER", "diff"))) |>
+  pivot_longer(cols = contains("Height"),
+               values_to = "Height_cm",
+               values_drop_na = T) |>
+  separate_wider_delim(name, 
+                       delim = "_",
+                       names = c("temp", "pinPosition"),
+                       too_few = "align_start") |>
+  filter(str_detect(temp, "Rejected", negate = T)) |>
+  mutate(pinPosition = case_when(
+    is.na(pinPosition) ~ "single",
+    .default = pinPosition
+  )) |>
+  select(-temp) |>
+  add_column(season = "spring") |>
+  rename(date = DateSPRING)
+
+#names(dat) [!names(dat) %in% names(dat_spring) ]
+#unique(dat_spring$pinPosition)
+
+
+dat_fall <- dat |>
+  select(-contains(c("SPRING", "SUMMER", "diff"))) |>
+  # introduces NA, where NA was originally as text
+  mutate(across(starts_with("Height"), as.numeric)) |>
+  pivot_longer(cols = contains("Height"),
+               values_to = "Height_cm",
+               values_drop_na = T) |>
+  separate_wider_delim(name, 
+                       delim = "_",
+                       names = c("temp", "pinPosition"),
+                       too_few = "align_start") |>
+  filter(str_detect(temp, "Rejected", negate = T)) |>
+  mutate(pinPosition = case_when(
+    is.na(pinPosition) ~ "single",
+    .default = pinPosition
+  )) |>
+  select(-temp) |>
+  add_column(season = "fall") |>
+  rename(date = DateFALL)
+
+# A check looking into the warnings introduced when turning
+# Hieght columns from characters to numeric. All fine.
+# ch <- dat |>
+#   select(-contains(c("SPRING", "SUMMER", "diff"))) |>
+#   drop_na(HeightFALL) |>
+#   unite("link", c(ID, DateFALL))
+# num <- dat |>
+#   select(-contains(c("SPRING", "SUMMER", "diff"))) |>
+#   mutate(across(starts_with("Height"), as.numeric)) |>
+#   drop_na(HeightFALL) |>
+#   unite("link", c(ID, DateFALL))
+# ch |>
+#   filter(!link %in% num$link) |>
+#   View()
+  
+
+# Combining the two
+dat_long <- dat_spring |>
+  bind_rows(dat_fall) |>
+  # merge comments and note columns
+  unite("Remarks", 
+        contains(c("Comment", "Notes")), 
+        sep = ". ",
+        na.rm=TRUE) |>
+  # merge observer columns
+  unite("Observer",
+        contains("Observer"),
+        sep = ". ",
+        na.rm = TRUE)
+
+
+```
+
+The long data is `r nrow(dat_long)` rows.
+This is too much to display as an html table on this web site, but here is a 
+random sample of 100 rows just to illustrate.
+
+```{r}
+DT::datatable(dat_long[sample(1:nrow(dat_long), 100),])
+```
+
+I still need to figure out what to do about that second measurement on some
+pins in the fall of 2017.
+
+## Looking for data problems
+
+```{r}
+dat_long |>
+  count(Treatment)
+```
+
+How can Treatment be NA?
+
+```{r}
+dat_long |>
+  filter(is.na(Treatment)) 
+```
+
+These are all new pins, and all from the fall.
+These row also dont have Pin_no and Plot_no.
+I can assume that the Treatment of the new pins are the same as the original
+pins.
+
+```{r}
+temp <- dat_long |>
+  select(c(ID, 
+           Plot_no,
+           Pin_no,
+           Treatment)) |>
+  distinct() |>
+  sepert
+```
+
+
+```{r}
+dat_long |>
+  filter(ID == "16.6") |>
+  View()
+
 ```
 
