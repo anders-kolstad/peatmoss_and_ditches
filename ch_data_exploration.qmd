@@ -1,3 +1,9 @@
+---
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
 # Data exploration and cleaning {#data-exp}
 
 ```{r setup}
@@ -5,9 +11,10 @@
 library(tidyverse)
 library(readxl)
 library(DT)
+library(ggplot2)
 ```
 
-## A first look
+## Import and compile data
 
 The data set is located on GitHub i na `xlsx` format.
 The data are split into different tabs based on year.
@@ -17,16 +24,21 @@ The data are split into different tabs based on year.
 
 dat <- read_excel("data/growthData.xlsx", 
     sheet = "y2017") |>
+  # rm some measurements from October. These were measured again in November 
+  # along with the rest of the quadrats.
+  select(-DateFALL2,
+         -HeightFALL2,
+         -ObserverFALL2) |>
   bind_rows(
-    y2018 <- read_excel("data/growthData.xlsx", 
+    read_excel("data/growthData.xlsx", 
     sheet = "y2018") |>
   mutate(DateFALL = as.Date(DateFALL, "%d.%m.%Y"))) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2019") |>
-    mutate(DateSPRING = as.Date(DateSPRING, "%d/%m/%Y"),
-           DateSUMMER = as.Date(DateSUMMER, "%d/%m/%Y"),
-           DateFALL = as.Date(DateFALL, "%d/%m/%Y"))
+    mutate(
+      DateSUMMER = as.Date(DateSUMMER, "%d/%m/%Y"),
+      DateFALL = as.Date(DateFALL, "%d/%m/%y"))
   ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
@@ -48,9 +60,241 @@ dat <- read_excel("data/growthData.xlsx",
   )
 ```
 
-Here's what the data looks like when I just row bind them:
+Here's what the data looks like after I just row bind them:
 
 ```{r}
 DT::datatable(dat)
 ```
 
+</br>
+
+I need to make this into a long format.
+There are multiple date and height columns that I want to combine.
+I will split the spring and fall data (ignoring the summer data) into separate sets, and then combine them again later.
+
+```{r}
+#| code-summary: "Turn into long format"
+
+# Spring data
+dat_spring <- dat |>
+  select(-contains(c("FALL", "SUMMER", "diff"))) |>
+  pivot_longer(cols = contains("Height"),
+               values_to = "Height_cm",
+               values_drop_na = T) |>
+  separate_wider_delim(name, 
+                       delim = "_",
+                       names = c("temp", "pinPosition"),
+                       too_few = "align_start") |>
+  filter(str_detect(temp, "Rejected", negate = T)) |>
+  mutate(pinPosition = case_when(
+    is.na(pinPosition) ~ "single",
+    .default = pinPosition
+  )) |>
+  select(-temp) |>
+  add_column(season = "spring") |>
+  rename(date = DateSPRING)
+
+#names(dat) [!names(dat) %in% names(dat_spring) ]
+#unique(dat_spring$pinPosition)
+
+
+dat_fall <- dat |>
+  select(-contains(c("SPRING", "SUMMER", "diff"))) |>
+  # introduces NA, where NA was originally as text
+  mutate(across(starts_with("Height"), as.numeric)) |>
+  pivot_longer(cols = contains("Height"),
+               values_to = "Height_cm",
+               values_drop_na = T) |>
+  separate_wider_delim(name, 
+                       delim = "_",
+                       names = c("temp", "pinPosition"),
+                       too_few = "align_start") |>
+  filter(str_detect(temp, "Rejected", negate = T)) |>
+  mutate(pinPosition = case_when(
+    is.na(pinPosition) ~ "single",
+    .default = pinPosition
+  )) |>
+  select(-temp) |>
+  add_column(season = "fall") |>
+  rename(date = DateFALL)
+
+# A check looking into the warnings introduced when turning
+# Hieght columns from characters to numeric. All fine.
+# ch <- dat |>
+#   select(-contains(c("SPRING", "SUMMER", "diff"))) |>
+#   drop_na(HeightFALL) |>
+#   unite("link", c(ID, DateFALL))
+# num <- dat |>
+#   select(-contains(c("SPRING", "SUMMER", "diff"))) |>
+#   mutate(across(starts_with("Height"), as.numeric)) |>
+#   drop_na(HeightFALL) |>
+#   unite("link", c(ID, DateFALL))
+# ch |>
+#   filter(!link %in% num$link) |>
+#   View()
+  
+
+# Combining the two
+dat_long <- dat_spring |>
+  bind_rows(dat_fall) |>
+  # merge comments and note columns
+  unite("Remarks", 
+        contains(c("Comment", "Notes")), 
+        sep = ". ",
+        na.rm=TRUE) |>
+  # merge observer columns
+  unite("Observer",
+        contains("Observer"),
+        sep = ". ",
+        na.rm = TRUE)
+
+
+```
+
+The long data is `r nrow(dat_long)` rows.
+This is too much to display as an html table on this web site, but here is a random sample of 100 rows just to illustrate.
+
+```{r}
+DT::datatable(dat_long[sample(1:nrow(dat_long), 100),])
+```
+
+</br>
+
+I still need to figure out what to do about that second measurement on some pins in the fall of 2017.
+
+## Looking for data problems
+
+### Dates
+
+#### Seasons
+
+Are the dates entered correctly to match the seasons?
+
+```{r fig-datesCheck}
+#| fig.cap: "Distribution of measurement dates (months)."
+dat_long |>
+  ggplot() +
+  geom_bar(aes(x = month(date)))+
+  facet_grid(year(date)~season)
+```
+
+There are some measurement sin 2020 that are wrong.
+It turns out the month and day have been switched for plots 8 and 9:
+
+```{r fig-dateCheck2}
+#| fig.cap: "Checking inconsistency in date entries."
+dat_long |>
+  mutate(year = year(date)) |>
+  filter(year == 2020,
+         season == "fall") |>
+  ggplot() +
+  geom_bar(aes(x = date),
+           color = "yellow",
+           fill = "orange")+
+  theme(axis.text.y = element_blank()) +
+  facet_grid(Plot_no~.)
+```
+
+```{r}
+#| eval: false
+#| code-summary: "Confirming tht day and month have been switched."
+dat_long |>
+  filter(Plot_no %in% c(8, 9),
+         season == "fall",
+         year(date) == 2020) |>
+  View()
+```
+
+I will reverse these now.
+
+```{r}
+#| code-summary: "Fix date mistake"
+dat_long <- dat_long |>
+  mutate(date = case_when(
+    Plot_no %in% c(8,9) & date == date("2020-06-10") ~ date("2020-10-06"),
+    .default = date
+  ))
+```
+
+```{r fig-dateCheck3}
+#| fig.cap: "Checking measurement dates after fixing mistake."
+dat_long |>
+  mutate(year = year(date)) |>
+  filter(year == 2020,
+         season == "fall") |>
+  ggplot() +
+  geom_bar(aes(x = date),
+           color = "yellow",
+           fill = "orange")+
+  theme(axis.text.y = element_blank()) +
+  facet_grid(Plot_no~.)
+```
+
+#### Year
+
+```{r fig-distYears}
+#| fig.cap: "Distribution of data points over the years and seasons"
+dat_long |>
+  ggplot() +
+  geom_bar(aes(
+    x = factor(year(date)),
+    fill = season)) +
+  labs(x = "Year")
+```
+
+I wonder why there are so relatively few observation in 2020.
+
+### Height variable
+
+A closer look at the height variable.
+
+Here's the time series for a single pin, measured from the west.
+
+```{r}
+dat_long |>
+  filter(grepl("^8.14", ID),
+         pinPosition == "W2") |>
+  mutate(
+    year = year(date),
+    month = month(date),
+    day = day(date)) |>
+  arrange(year, month, day) |>
+  select(-Plot_no,
+         -Pin_no,
+         -Treatment,
+         -Species_W,
+         -Species_E,
+         -date) |>
+  datatable()
+```
+
+It appears the pin was replaced in the first fall in 2019.
+In 2020 there is no data from the spring, and in the fall the ID is back to the original (the *new* part is removed).
+Next spring (2021) the wire seems to have been replaced again.
+In the spring of 2022 it was replaced a forth(?) time, but the ID is again back to the original code.
+
+How do we make sense of this?
+
+### Treatment
+
+A closer look at the Treatment variable.
+
+```{r}
+dat_long |>
+  count(Treatment)
+```
+
+How can Treatment be NA?
+
+```{r}
+dat_long |>
+  filter(is.na(Treatment)) |>
+  datatable()
+```
+
+These are all new pins, and all from the fall.
+These row also don't have Pin_no and Plot_no.
+Year is 2018 or 2019.
+I can assume that the Treatment of the new pins are the same as the original pins (same Plot_no but without the *new* suffix).
+
+I need to make a table with original IDs matched with the correct plot and pin number, and the correct treatment.
