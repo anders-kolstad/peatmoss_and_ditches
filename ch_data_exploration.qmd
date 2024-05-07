@@ -173,6 +173,19 @@ DT::datatable(dat_long[sample(1:nrow(dat_long), 100),])
 
 ## Looking for data problems
 
+### Treatment
+
+A closer look at the Treatment variable.
+
+```{r}
+dat_long |>count(Treatment)
+```
+
+How can Treatment be NA?
+
+These are all new pins, and all from the fall.
+I will delete the rows for a different reason [below](#id).
+
 ### Dates
 
 #### Seasons
@@ -325,9 +338,19 @@ dat_long <- dat_long |>
          year = year(date))
 ```
 
-### Height variable
+```{r fig-newDistYears}
+#| fig.cap: "Distribution of data points over the years and seasons after moving some datapoints from 2022 to 2020."
+dat_long |>
+  ggplot() +
+  geom_bar(aes(
+    x = year,
+    fill = season)) +
+  labs(x = "Year")
+```
 
-A closer look at the height variable.
+### ID variable {#id}
+
+A closer look at the ID variable.
 
 Here's the time series for a single pin, measured from the west.
 
@@ -351,7 +374,7 @@ Conclusion.
 I will calculate the growth per season, if and only if the spring and fall height are recorded on the same pin/wire.
 That means I can remove seasons where the fall measurements are done on new wires.
 There are also some IDs that have the suffix *old*.
-In these cases there should always be one measrement for the same date with the prefix *new,* meaning I can delete all *old* measurements from the spring heights.
+In these cases there should always be one measurement for the same date with the prefix *new,* meaning I can delete all *old* measurements from the spring heights.
 
 ```{r}
 dat_long |>
@@ -397,7 +420,7 @@ dat_long <- dat_long |>
 I should be able to convert `ID_num` to numeric without error
 
 ```{r}
-head(as.numeric(dat_long$ID_num))
+summary(as.numeric(dat_long$ID_num))
 ```
 
 That's is fine.
@@ -413,26 +436,109 @@ dat_long |>
   kable_paper(full_width = F)
 ```
 
-### Treatment
-
-A closer look at the Treatment variable.
+### Pin position
 
 ```{r}
 dat_long |>
-  count(Treatment)
+  group_by(year, season) |>
+  count(pinPosition) |>
+  spread(pinPosition, n)
 ```
 
-How can Treatment be NA?
+I want to combine E1 with E2, H1 with H2, etc.
+
+In addition, in 2018 I want to combine all pinPositions.
+
+V is W, and H is E.
+
+### Seasonal growth
+
+My response variable will be seasonal growth, from one spring to the following fall.
 
 ```{r}
 dat_long |>
-  filter(is.na(Treatment)) |>
-  datatable()
+  pivot_wider(
+    id_cols = c(ID_num,
+                Plot_no,
+                Pin_no,
+                pinPosition,
+                Treatment,
+                year
+                ),
+    names_from = season,
+    values_from = Height_cm) |>
+  mutate(growth_cm = spring-fall) |>
+  pull(growth_cm) |>
+  summary()
 ```
 
-These are all new pins, and all from the fall.
-These row also don't have Pin_no and Plot_no.
-Year is 2018 or 2019.
-I can assume that the Treatment of the new pins are the same as the original pins (same Plot_no but without the *new* suffix).
+According to this, the peat grows 5mm per season.
+But there are some of NAs.
+These arise when there is no measurement done for one of the seasons.
+Let's look is there are any patterns in these NA's.
 
-I need to make a table with original IDs matched with the correct plot and pin number, and the correct treatment.
+```{r}
+dat_long |>
+  pivot_wider(
+    id_cols = c(ID_num,
+                Plot_no,
+                Pin_no,
+                pinPosition,
+                Treatment,
+                year
+                ),
+    names_from = season,
+    values_from = Height_cm) |>
+  mutate(growth_cm = spring-fall) |>
+  filter(is.na(growth_cm)) |>
+  group_by(year, Treatment) |>
+  count() |>
+  pivot_wider(names_from = Treatment, values_from = n) 
+```
+
+-   There are consistently 95-96 NA's in 2018.
+    That is because we started with dual measurement (W and E) in the fall of 2018.
+
+-   EDGE has a large number of NA's in 2022.
+    That is because the edge treatment was dropped altogether.
+
+-   There is no big increase over time (e.g. due to more wires being replaced
+
+Let's also look at the distribution of data across Treatments and years.
+
+```{r}
+dat_long |>
+  pivot_wider(
+    id_cols = c(ID_num,
+                Plot_no,
+                Pin_no,
+                pinPosition,
+                Treatment,
+                year
+                ),
+    names_from = season,
+    values_from = Height_cm) |>
+  mutate(growth_cm = spring-fall) |>
+  filter(!is.na(growth_cm)) |>
+  group_by(year, Treatment) |>
+  count() |>
+  pivot_wider(names_from = Treatment, values_from = n) 
+```
+
+Edge, Hollow and hummocks are only included from 2021.
+
+```{r}
+dat_long <- dat_long |>
+  pivot_wider(
+    id_cols = c(ID_num,
+                Plot_no,
+                Pin_no,
+                pinPosition,
+                Treatment,
+                year
+                ),
+    names_from = season,
+    values_from = Height_cm) |>
+  mutate(growth_cm = spring-fall) |>
+  filter(!is.na(growth_cm))
+```
