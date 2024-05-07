@@ -335,26 +335,83 @@ Here's the time series for a single pin, measured from the west.
 dat_long |>
   filter(grepl("^8.14", ID),
          pinPosition == "W2") |>
-  mutate(
-    year = year(date),
-    month = month(date),
-    day = day(date)) |>
-  arrange(year, month, day) |>
-  select(-Plot_no,
-         -Pin_no,
-         -Treatment,
-         -Species_W,
-         -Species_E,
-         -date) |>
+  arrange(year) |>
+  select(ID, Remarks, year, season, Height_cm) |>
   datatable()
 ```
 
-It appears the pin was replaced in the first fall in 2019.
-In 2020 there is no data from the spring, and in the fall the ID is back to the original (the *new* part is removed).
-Next spring (2021) the wire seems to have been replaced again.
-In the spring of 2022 it was replaced a forth(?) time, but the ID is again back to the original code.
+It appears the pin was replaced in the fall of 2019.
+I must assume that what is recorded there is the height of the new pin, and is therefore not compareable to the spring value that same year.
+The *new* annotation only last one time, i.e. it is not repeated the next season.
+In the spring of 2021 the wire seems to have been replaced again, and then again in the fall.
+In the spring of 2022 it was replaced a forth(?) time, according to the remarks.
+But this time the ID is unchanged.
 
-How do we make sense of this?
+Conclusion.
+I will calculate the growth per season, if and only if the spring and fall height are recorded on the same pin/wire.
+That means I can remove seasons where the fall measurements are done on new wires.
+There are also some IDs that have the suffix *old*.
+In these cases there should always be one measrement for the same date with the prefix *new,* meaning I can delete all *old* measurements from the spring heights.
+
+```{r}
+dat_long |>
+  separate_wider_regex(ID,
+    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
+    too_few = "align_start", 
+    cols_remove = F) |>
+  count(text_in_ID)
+
+```
+
+Removing those with direction in the ID
+
+```{r}
+dat_long <- dat_long|>
+  separate_wider_regex(ID,
+    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
+    too_few = "align_start", 
+    cols_remove = F) |>
+  filter(!text_in_ID %in% c("NØ", "SV"))
+```
+
+Then I remove those that are old in spring and new in fall.
+
+```{r}
+dat_long <- dat_long |>
+  mutate(text_in_ID = case_when(
+    is.na(text_in_ID) ~ "-",
+    .default = text_in_ID
+  )) |>
+  filter(
+    ifelse(text_in_ID == "old",
+      season != "spring",
+      TRUE
+    ),
+    ifelse(text_in_ID == "new",
+      season != "fall",
+      TRUE
+    ),
+  )
+```
+
+I should be able to convert `ID_num` to numeric without error
+
+```{r}
+head(as.numeric(dat_long$ID_num))
+```
+
+That's is fine.
+And how does the text part of the ID look now?
+
+```{r}
+dat_long |>
+  group_by(year, season) |>
+  count(text_in_ID) |>
+  spread(text_in_ID, n) |>
+  select(-"-") |>
+  kbl() |>
+  kable_paper(full_width = F)
+```
 
 ### Treatment
 
