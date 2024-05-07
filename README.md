@@ -15,9 +15,10 @@ Climate data from local weather stations.
 _Nr 29 and 30 should be exluded from 2021 and 2022_
 
 `data/growthData.xlsx`
-Tabs: one per year. Combine these with rbind()
+Tabs: one per year. 
+
 Columns:
-- **ID**. Unique for each pin, but not each measurement. _old/new_ means the pin has been replaces, and you cannot compare them.
+- **ID**. Unique for each pin, but not each measurement. _old/new_ means the pin has been replaced, and you cannot compare them.
 - **Plot_no**. Vegetation quadrats, 1-28(-30).
 - **Pin_nr**. 1-16, unique within each quadrat. Cranked wire / Shpagnum brush.
 - **Treatment**.
