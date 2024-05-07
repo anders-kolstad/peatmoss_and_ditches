@@ -12,11 +12,12 @@ library(tidyverse)
 library(readxl)
 library(DT)
 library(ggplot2)
+library(kableExtra)
 ```
 
 ## Import and compile data
 
-The data set is located on GitHub i na `xlsx` format.
+The data set is located on GitHub in an `xlsx` format.
 The data are split into different tabs based on year.
 
 ```{r readData}
@@ -24,39 +25,48 @@ The data are split into different tabs based on year.
 
 dat <- read_excel("data/growthData.xlsx", 
     sheet = "y2017") |>
-  # rm some measurements from October. These were measured again in November 
+  # remove some measurements from October (FALL2). 
+  # These were measured again in November 
   # along with the rest of the quadrats.
   select(-DateFALL2,
          -HeightFALL2,
          -ObserverFALL2) |>
+  # adding a variable that keeps track of which tab the data comes from
+  add_column(tab_year = 2017) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2018") |>
-  mutate(DateFALL = as.Date(DateFALL, "%d.%m.%Y"))) |>
+  mutate(DateFALL = as.Date(DateFALL, "%d.%m.%Y"),
+         tab_year = 2018)
+         ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2019") |>
     mutate(
       DateSUMMER = as.Date(DateSUMMER, "%d/%m/%Y"),
-      DateFALL = as.Date(DateFALL, "%d/%m/%y"))
+      DateFALL = as.Date(DateFALL, "%d/%m/%y"),
+      tab_year = 2019)
   ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2020") |>
-    mutate(DateSPRING = as.Date(DateSPRING, "%d/%m/%Y"))
+    mutate(DateSPRING = as.Date(DateSPRING, "%d/%m/%Y"),
+           tab_year = 2020)
   ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2021") |>
       # data had explicit NAs in cells that were read as text:
-    mutate(across(starts_with("Height"), as.numeric))
+    mutate(across(starts_with("Height"), as.numeric),
+           tab_year = 2021)
   ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2022") |>
     mutate(across(starts_with("Height"), as.numeric),
            Plot_no = as.numeric(Plot_no),
-           Pin_no = as.numeric(Pin_no))
+           Pin_no = as.numeric(Pin_no),
+           tab_year = 2022) 
   )
 ```
 
@@ -146,9 +156,10 @@ dat_long <- dat_spring |>
   unite("Observer",
         contains("Observer"),
         sep = ". ",
-        na.rm = TRUE)
+        na.rm = TRUE) |>
+  mutate(year = year(date))
 
-
+rm(dat_fall, dat_spring)
 ```
 
 The long data is `r nrow(dat_long)` rows.
@@ -159,8 +170,6 @@ DT::datatable(dat_long[sample(1:nrow(dat_long), 100),])
 ```
 
 </br>
-
-I still need to figure out what to do about that second measurement on some pins in the fall of 2017.
 
 ## Looking for data problems
 
@@ -178,7 +187,7 @@ dat_long |>
   facet_grid(year(date)~season)
 ```
 
-There are some measurement sin 2020 that are wrong.
+There are some measurements in the fall of 2020 that are wrong.
 It turns out the month and day have been switched for plots 8 and 9:
 
 ```{r fig-dateCheck2}
@@ -230,6 +239,42 @@ dat_long |>
   facet_grid(Plot_no~.)
 ```
 
+Then there were some errors with the dates in the spring of 2019 @fig-datesCheck.
+
+```{r }
+dat_long |>
+  filter(year == 2019,
+         season == "spring") |>
+  mutate(month = month(date)) |>
+  group_by(date, month) |>
+  count()
+```
+
+Here I will assume that it is only the month that is wrong.
+Fixing this now:
+
+```{r}
+#| code-summary: "Fix date mistake"
+dat_long |>
+  mutate(date = case_when(
+    year == 2019 & date == date("2019-10-05") ~ date("2019-05-10"),
+    .default = date
+  )) |>
+  filter(year == 2019,
+         season == "spring") |>
+  mutate(month = month(date)) |>
+  group_by(date, month) |>
+  count()
+
+# OK
+
+dat_long <- dat_long |>
+  mutate(date = case_when(
+    year == 2019 & date == date("2019-10-05") ~ date("2019-05-10"),
+    .default = date
+  ))
+```
+
 #### Year
 
 ```{r fig-distYears}
@@ -243,6 +288,42 @@ dat_long |>
 ```
 
 I wonder why there are so relatively few observation in 2020.
+
+```{r}
+options(knitr.kable.NA = '')
+
+dat_long |>
+  mutate(tab_year = paste0("tab_year", tab_year)) |>
+  group_by(tab_year, year) |>
+  count() |>
+  spread(year, n) |>
+  knitr::kable() |>
+  kable_paper(full_width = F)
+```
+
+Turns out some of the 2020 data (add to the 2020 tab) was give the wrong date.
+
+```{r}
+dat_long |>
+  mutate(date = case_when(
+    tab_year == 2020 & year == 2022 ~ date - years(2),
+    .default = date),
+         year = year(date))|>
+  mutate(tab_year = paste0("tab_year", tab_year)) |>
+  group_by(tab_year, year) |>
+  count() |>
+  spread(year, n) |>
+  knitr::kable() |>
+  kable_paper(full_width = F)
+  
+# OK
+
+dat_long <- dat_long |>
+  mutate(date = case_when(
+    tab_year == 2020 & year == 2022 ~ date - years(2),
+    .default = date),
+         year = year(date))
+```
 
 ### Height variable
 
