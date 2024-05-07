@@ -5,7 +5,7 @@ project:
 book:
   title: "Analysing the effect of bog ditches on Sphagnum communities"
   author: "Anders Kolstad"
-  repo-url: https://github.com/NINAnor/NINA-ebook-template
+  repo-url: https://github.com/anders-kolstad/peatmoss_and_ditches
   repo-branch: main
   repo-actions: [edit]
   sharing: [twitter, facebook, linkedin]
