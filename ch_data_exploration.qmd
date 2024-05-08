@@ -73,7 +73,7 @@ dat <- read_excel("data/growthData.xlsx",
 Here's what the data looks like after I just row bind them:
 
 ```{r}
-DT::datatable(dat)
+DT::datatable(dat |> slice_sample(n = 10))
 ```
 
 </br>
@@ -178,12 +178,12 @@ DT::datatable(dat_long[sample(1:nrow(dat_long), 100),])
 A closer look at the Treatment variable.
 
 ```{r}
-dat_long |>count(Treatment)
+dat_long |>
+  count(Treatment)
 ```
 
 How can Treatment be NA?
-
-These are all new pins, and all from the fall.
+Turns out these are all new pins, and all from the fall.
 I will delete the rows for a different reason [below](#id).
 
 ### Dates
@@ -314,9 +314,11 @@ dat_long |>
   kable_paper(full_width = F)
 ```
 
-Turns out some of the 2020 data (add to the 2020 tab) was give the wrong date.
+Turns out some of the 2020 data (those added to the 2020 tab) was give the wrong date.
 
 ```{r}
+#| code-summary: "Fix date mistake"
+
 dat_long |>
   mutate(date = case_when(
     tab_year == 2020 & year == 2022 ~ date - years(2),
@@ -447,6 +449,7 @@ dat_long |>
 `ID_num` is a character column, but we can have it as numeric and round to two decimal points.
 
 ```{r}
+#| code-summary: 'fix weird ID_num'
 dat_long <- dat_long |>
   mutate(ID_num = round(as.numeric(ID_num), 2))
 ```
@@ -457,7 +460,9 @@ dat_long <- dat_long |>
 dat_long |>
   group_by(year, season) |>
   count(pinPosition) |>
-  spread(pinPosition, n)
+  spread(pinPosition, n) |>
+  kable() |>
+  kable_paper()
 ```
 
 I want to combine E1 with E2, H1 with H2, etc.
@@ -466,6 +471,8 @@ In addition, in 2018 I want to combine all pinPositions.
 In 2018, V (venstre) can be made equivalent W (west) , and H is E.
 
 ```{r}
+#| output: false
+#| code-summary: 'Create pinPosition2 by combination'
 dat_long |>
   mutate(pinPosition2 = case_match(
     pinPosition,
@@ -498,19 +505,20 @@ dat_long |>
 
 ### Species
 
-```{r}
-dat_long |>
-  count(Species_E) |>
-  datatable()
+TheShapgnum species identities were recorded for each pin/wire from 2020 and onwards.
 
+```{r}
 #dat_long |>
 #  count(Species_W) |>
 #  datatable()
+#  
+dat_long |>
+  count(Species_E) |>
+  datatable()
 ```
 
-Standardise factor levels:
-
 ```{r}
+#| code-summary: 'Standardise factor levels'
 dat_long <- dat_long |>
   mutate(
     Species_W = case_match(
@@ -575,7 +583,7 @@ These arise when there is no measurement done for one of the seasons.
 Let's look is there are any patterns in these NA's.
 
 ```{r}
-dat_long |>
+dat_season |>
   filter(is.na(growth_cm)) |>
   group_by(year, Treatment) |>
   count() |>
@@ -587,7 +595,7 @@ dat_long |>
 -   EDGE has a large number of NA's in 2022.
     That is because the edge treatment was dropped.
 
--   There is no big increase over time (e.g. due to more wires being replaced.
+-   There is no big increase over time (e.g. due to more wires being replaced).
 
 -   There are many NAs for treatment *M* in 2021
 
@@ -596,7 +604,7 @@ dat_long |>
 Let's also look at the distribution of data across Treatments and years.
 
 ```{r}
-dat_long |>
+dat_season |>
   filter(!is.na(growth_cm)) |>
   group_by(year, Treatment) |>
   count() |>
@@ -608,7 +616,7 @@ dat_long |>
 Edge, Hollow and hummocks are only included from 2021.
 
 ```{r}
-dat_long <- dat_long |>
+dat_season <- dat_season |>
   filter(!is.na(growth_cm))
 ```
 
@@ -618,8 +626,8 @@ The species identities are preserved in the dataset as list columns, where one t
 It can be four records if there are two from spring (e.g. W1 and W2) and two from the fall.
 
 I will first count the number of unique species names in the list columns, and then, if that returns a single species (which is not NA), I will extract the unique species name.
-If the species differes between the records, I will add NAs.
-Below is a prrof of concept on a smaller sample of the data.
+If the species differed between the records, I will add NAs.
+Below is a proof of concept on a smaller sample of the data.
 
 ```{r proofConcept}
 #| eval: false
@@ -712,7 +720,8 @@ dat_season |>
   select(ID_num,
          year,
          Treatment) |>
-  datatable()
+  kable() |>
+  kable_classic()
 ```
 
 I came across the case by chance.
@@ -742,3 +751,77 @@ dat_season |>
 ```
 
 Exploring the dataset tells us that for these `r length(dups)` plots, the Treatment changed from *Hollow* in 2021 to *Edge* in 2022.
+After talking to Marte, I learned that plot 28 should be Hollow (all the time).
+Also that plots 29 and 30 should be excluded all together.
+
+```{r}
+dat_season <- dat_season |>
+  mutate(Treatment = case_when(
+    Plot_no == 28 ~ "HOLLOW",
+    .default = Treatment
+  )) |>
+  filter(!Plot_no %in% c(29,30)) |>
+  select(-Species_W,
+         -Species_E)
+```
+
+### Final check
+
+```{r fig-yearEnd}
+#| fig-cap: 'Distribution of data points across years'
+dat_season |>
+  ggplot() +
+  geom_bar(aes(
+    x = year),
+    fill = "darkkhaki") +
+  labs(x = "Year")
+```
+
+The distribution across years looks much better now.
+
+```{r fig-yearAndTrt}
+#| fig-cap: 'Distribution of data points across years, conditioned on Treatment'
+
+dat_season |>
+  ggplot() +
+  geom_bar(aes(
+    x = year),
+    fill = "darkkhaki") +
+  labs(x = "Year") +
+  facet_wrap(.~Treatment)
+```
+
+The Edge treatment is now all gone.
+
+```{r fig-commomSPecies}
+#| fig-cap: 'Distribution of data points across taxa'
+
+dat_season |>
+  pivot_longer(
+    cols = starts_with("species"),
+    values_to = "Species"
+    ) |>
+  filter(!is.na(Species),
+         Species != "NA",
+         Species != "dead") |>
+  count(Species) |>
+  arrange(n) |>
+  mutate(Species = fct_inorder(Species)) |>
+  ggplot() +
+  geom_col(aes(x = Species, y = n),
+           fill = "darkkhaki") +
+  coord_flip()
+```
+
+*Shagnum papilosum, S. medium, S. tennuis* and *S. rubellum* are the four most common species in the dataset.
+
+```{r}
+dat_season |>
+  group_by(year, Treatment) |>
+  count() |>
+  pivot_wider(names_from = Treatment, values_from = n) |>
+  kbl() |>
+  kable_paper()
+```
+
+The distribution of data points across treatments now looks much better as well.
