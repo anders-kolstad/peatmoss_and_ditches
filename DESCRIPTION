@@ -11,4 +11,5 @@ Imports:
   sf,
   tmap,
   DT,
-  readxl
+  readxl,
+  kableExtra

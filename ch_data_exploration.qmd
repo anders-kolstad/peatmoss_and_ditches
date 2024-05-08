@@ -753,6 +753,7 @@ dat_season |>
 Exploring the dataset tells us that for these `r length(dups)` plots, the Treatment changed from *Hollow* in 2021 to *Edge* in 2022.
 After talking to Marte, I learned that plot 28 should be Hollow (all the time).
 Also that plots 29 and 30 should be excluded all together.
+Those are the two Edge plots.
 
 ```{r}
 dat_season <- dat_season |>
