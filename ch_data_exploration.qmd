@@ -70,6 +70,8 @@ dat <- read_excel("data/growthData.xlsx",
   )
 ```
 
+There are some warnings when actual NAs (text) are converted to real NAs.
+
 Here's what the data looks like after I just row bind them:
 
 ```{r}
@@ -317,7 +319,7 @@ dat_long |>
 Turns out some of the 2020 data (those added to the 2020 tab) was give the wrong date.
 
 ```{r}
-#| code-summary: "Fix date mistake"
+#| code-summary: "Fix year mistake"
 
 dat_long |>
   mutate(date = case_when(
@@ -399,7 +401,8 @@ dat_long <- dat_long|>
   filter(!text_in_ID %in% c("NØ", "SV"))
 ```
 
-Then I remove those that are old in spring and new in fall.
+Then I remove those that are old in spring.
+I thought I could also remove those that are new in the fall, but turn out these could be labeles new in spring, and then that label is kept though that season (and reset again in the next season).
 
 ```{r}
 dat_long <- dat_long |>
@@ -411,11 +414,7 @@ dat_long <- dat_long |>
     ifelse(text_in_ID == "old",
       season != "spring",
       TRUE
-    ),
-    ifelse(text_in_ID == "new",
-      season != "fall",
-      TRUE
-    ),
+    )
   )
 ```
 
@@ -429,6 +428,34 @@ That's is fine.
 And how does the text part of the ID look now?
 
 ```{r}
+dat_long |>
+  group_by(year, season) |>
+  count(text_in_ID) |>
+  spread(text_in_ID, n) |>
+  select(-"-") |>
+  kbl() |>
+  kable_paper(full_width = F)
+```
+
+I need to remove those that are new in fall and that don't have any values labels new in spring (i.e. that they are truly new that fall, and that the label is not simply carried from the spring record).
+
+```{r}
+newInSpring <- dat_long |>
+  filter(season == "spring" & text_in_ID == "new") |>
+  mutate(link = paste(ID_num, tab_year, pinPosition, sep= "_")) |>
+  pull(link)
+```
+
+```{r}
+dat_long <- dat_long |>
+  mutate(link = paste(ID_num, tab_year, pinPosition, sep= "_")) |>
+  filter(
+    ifelse(text_in_ID == "new" & !link %in% newInSpring,
+      season != "fall",
+      TRUE
+    )) |>
+  select(-link)
+
 dat_long |>
   group_by(year, season) |>
   count(text_in_ID) |>
@@ -600,6 +627,8 @@ dat_season |>
 -   There are many NAs for treatment *M* in 2021
 
 -   There are many NA in general for 2021
+
+<!--# dat_season |> filter(is.na(growth_cm)) |> View() -->
 
 Let's also look at the distribution of data across Treatments and years.
 
