@@ -5,7 +5,6 @@
 <meta name="generator" content="quarto-1.4.543">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="author" content="Anders Kolstad">
-<meta name="description" content="Add some description here if you like.">
 <title>Analysing the effect of bog ditches on Sphagnum communities</title>
 <style>
 code{white-space: pre-wrap;}
@@ -119,7 +118,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div class="sidebar-title mb-0 py-0">
       <a href="./">Analysing the effect of bog ditches on Sphagnum communities</a> 
         <div class="sidebar-tools-main">
-    <a href="https://github.com/NINAnor/NINA-ebook-template" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="https://github.com/anders-kolstad/peatmoss_and_ditches" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
     <div class="dropdown">
       <a href="" title="Share" id="quarto-navigation-tool-dropdown-0" class="quarto-navigation-tool dropdown-toggle px-1" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Share"><i class="bi bi-share"></i></a>
       <ul class="dropdown-menu" aria-labelledby="quarto-navigation-tool-dropdown-0">
@@ -196,19 +195,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <nav id="TOC" role="doc-toc" class="toc-active"><h2 id="toc-title">Table of contents</h2>
    
   <ul>
-<li><a href="#intro" id="toc-intro" class="nav-link active" data-scroll-target="#intro"><span class="header-section-number">0.1</span> Introduction</a></li>
-  </ul><div class="toc-actions"><ul><li><a href="https://github.com/NINAnor/NINA-ebook-template/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></nav>
+<li><a href="#intro" id="toc-intro" class="nav-link active" data-scroll-target="#intro"><span class="header-section-number">1</span> Introduction</a></li>
+  </ul><div class="toc-actions"><ul><li><a href="https://github.com/anders-kolstad/peatmoss_and_ditches/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><div class="quarto-title">
 <h1 class="title">Analysing the effect of bog ditches on Sphagnum communities</h1>
 </div>
 
-<div>
-  <div class="description">
-    <p>Add some description here if you like.</p>
-  </div>
-</div>
 
 
 <div class="quarto-title-meta">
@@ -226,30 +220,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><section id="intro" class="level2" data-number="0.1"><h2 data-number="0.1" class="anchored" data-anchor-id="intro">
-<span class="header-section-number">0.1</span> Introduction</h2>
-<p>Welcome splash page! Provide an overview of the book.</p>
-<p>Sample evaluation of R and Python in a side-by-side manner:</p>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>my_list <span class="ot">=</span> <span class="fu">list</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(my_list)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>my_list <span class="ot">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">type</span>(my_list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="quarto-layout-panel" data-layout-ncol="2">
-<div class="quarto-layout-row">
-<section id="r" class="level4 cell quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;" data-number="0.1.0.1"><h4 data-number="0.1.0.1" class="anchored" data-anchor-id="r">
-<span class="header-section-number">0.1.0.1</span> R</h4>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "list"</code></pre>
+</header><section id="intro" class="level1" data-number="1"><h1 data-number="1">
+<span class="header-section-number">1</span> Introduction</h1>
+<p>This web page documents the analysis for for a paper by <a href="https://github.com/martef">Marte Fandrem</a> on the effects of hydrological disturbance on the growth of Sphagnum mosses on a Norwegian bog.</p>
+<p>The bog is a relatively large ombrotrophic bog previously used for peat extraction, and also drained and used for forest plantations.</p>
+<p>Sphagnum growth was measured using the cranked wire technique on permanent vegetation quadrats (n = 28) from 2017 to 2022 (5 growing seasons). Each vegetation quadrat has 16 points (i.e.&nbsp;pins) and each pin was measured up to 4 times on each sampling occasion (on each side and by different people). The first 18 vegetation plots were initiated in 2017 and are paired with water table well that log the water table depth. These vegetation plots are situated in homogeneous vegetation types (bog lawns), but with varying distance to disturbances (extraction sites and ditches). The quadrats numbered 18-28 were initiated in 2021 and a placed relatively for from the hydrological disturbances, but in varying communities (hollows and hummoks).</p>
+<div class="cell">
+<details class="code-fold"><summary>Load packages</summary><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/">sf</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://r-tmap.github.io/tmap/">tmap</a></span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
-</section><section id="python" class="level4 cell quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;" data-number="0.1.0.2"><h4 data-number="0.1.0.2" class="anchored" data-anchor-id="python">
-<span class="header-section-number">0.1.0.2</span> Python</h4>
-<div class="cell-output cell-output-stdout">
-<pre><code>&lt;class 'list'&gt;</code></pre>
+<div class="cell">
+<details class="code-fold"><summary>Import data</summary><div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">path</span>    <span class="op">&lt;-</span> <span class="st">"data/shapeFiles/"</span></span>
+<span><span class="va">ditches</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html">read_sf</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="va">path</span>, <span class="st">"ditches/grofter.shp"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">massifs</span>  <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html">read_sf</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="va">path</span>, <span class="st">"massifs/hostadmyra_myrmassiv.shp"</span><span class="op">)</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="co">#extrSites &lt;- sf::read_sf(paste0(path, "peatExtractionSites/Torvtak.shp"))</span></span>
+<span><span class="co"># This data is the same as the masifs.</span></span>
+<span></span>
+<span><span class="va">quadrats</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html">read_sf</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="va">path</span>, <span class="st">"vegetationQuadrats1/veipunkter_vannbronner_ruter_2017.shp"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html">bind_rows</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html">read_sf</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="va">path</span>, <span class="st">"vegetationQuadrats2/vegetasjonsruter_19-30.shp"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
-</section>
+<div class="cell">
+<details class="code-fold"><summary>Create map</summary><div class="sourceCode" id="cb3"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_shape.html">tm_shape</a></span><span class="op">(</span><span class="va">massifs</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_polygons.html">tm_polygons</a></span><span class="op">(</span>col <span class="op">=</span> <span class="st">"Name"</span>,</span>
+<span>              palette <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"grey60"</span>, <span class="st">"grey70"</span>, <span class="st">"grey80"</span><span class="op">)</span>,</span>
+<span>              legend.show<span class="op">=</span><span class="cn">F</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_shape.html">tm_shape</a></span><span class="op">(</span><span class="va">ditches</span> <span class="op">|&gt;</span></span>
+<span>             <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span><span class="st">"Ditch age"</span> <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case_when.html">case_when</a></span><span class="op">(</span></span>
+<span>               <span class="va">Name</span> <span class="op">==</span> <span class="st">"Eldre"</span> <span class="op">~</span> <span class="st">"Old"</span>,</span>
+<span>               <span class="va">Name</span> <span class="op">==</span> <span class="st">"Nyere"</span> <span class="op">~</span> <span class="st">"More recent"</span>,</span>
+<span>               .default <span class="op">=</span> <span class="st">"Old"</span></span>
+<span>             <span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_lines.html">tm_lines</a></span><span class="op">(</span>col <span class="op">=</span> <span class="st">"Ditch age"</span>,</span>
+<span>           lwd<span class="op">=</span><span class="fl">2</span>,</span>
+<span>           palette <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"orange"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="co">#tm_shape(extrSites) +</span></span>
+<span>  <span class="co">#tm_polygons()</span></span>
+<span>  <span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_shape.html">tm_shape</a></span><span class="op">(</span><span class="va">quadrats</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_symbols.html">tm_dots</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>          shape<span class="op">=</span><span class="fl">21</span>,</span>
+<span>          col <span class="op">=</span> <span class="st">"green"</span>,</span>
+<span>          alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span>  <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_scale_bar.html">tm_scale_bar</a></span><span class="op">(</span>position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"left"</span>, <span class="st">"bottom"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://r-tmap.github.io/tmap/reference/tm_compass.html">tm_compass</a></span><span class="op">(</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details><div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="index_files/figure-html/studyMap-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Map of study area. Green circles are permanent vegetation quadrats. The shades of grey indicator different bog massifs.</figcaption></figure>
 </div>
 </div>
-<p>See <a href="#sec-hello-world">Chapter 1</a> for how to plot and cross reference figures. We cannot make cross referanceble objects on this page, because it is an <em>unnumbered</em> page, and you can’t cross reference to things in unnumbered pages.</p>
+</div>
+<div class="callout.note">
+<p>The shape file with the position of vegetation qadrats do not contain the qadrat ID for all cases. We need to add that.</p>
+</div>
 
 
 </section></main><!-- /main --><script id="quarto-html-after-body" type="application/javascript">
@@ -650,4 +676,4 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/NINAnor/NINA-ebook-template/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/anders-kolstad/peatmoss_and_ditches/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div></div></footer></body></html>

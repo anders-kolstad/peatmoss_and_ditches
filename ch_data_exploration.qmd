@@ -12,11 +12,12 @@ library(tidyverse)
 library(readxl)
 library(DT)
 library(ggplot2)
+library(kableExtra)
 ```
 
 ## Import and compile data
 
-The data set is located on GitHub i na `xlsx` format.
+The data set is located on GitHub in an `xlsx` format.
 The data are split into different tabs based on year.
 
 ```{r readData}
@@ -24,46 +25,55 @@ The data are split into different tabs based on year.
 
 dat <- read_excel("data/growthData.xlsx", 
     sheet = "y2017") |>
-  # rm some measurements from October. These were measured again in November 
+  # remove some measurements from October (FALL2). 
+  # These were measured again in November 
   # along with the rest of the quadrats.
   select(-DateFALL2,
          -HeightFALL2,
          -ObserverFALL2) |>
+  # adding a variable that keeps track of which tab the data comes from
+  add_column(tab_year = 2017) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2018") |>
-  mutate(DateFALL = as.Date(DateFALL, "%d.%m.%Y"))) |>
+  mutate(DateFALL = as.Date(DateFALL, "%d.%m.%Y"),
+         tab_year = 2018)
+         ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2019") |>
     mutate(
       DateSUMMER = as.Date(DateSUMMER, "%d/%m/%Y"),
-      DateFALL = as.Date(DateFALL, "%d/%m/%y"))
+      DateFALL = as.Date(DateFALL, "%d/%m/%y"),
+      tab_year = 2019)
   ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2020") |>
-    mutate(DateSPRING = as.Date(DateSPRING, "%d/%m/%Y"))
+    mutate(DateSPRING = as.Date(DateSPRING, "%d/%m/%Y"),
+           tab_year = 2020)
   ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2021") |>
       # data had explicit NAs in cells that were read as text:
-    mutate(across(starts_with("Height"), as.numeric))
+    mutate(across(starts_with("Height"), as.numeric),
+           tab_year = 2021)
   ) |>
   bind_rows(
     read_excel("data/growthData.xlsx", 
     sheet = "y2022") |>
     mutate(across(starts_with("Height"), as.numeric),
            Plot_no = as.numeric(Plot_no),
-           Pin_no = as.numeric(Pin_no))
+           Pin_no = as.numeric(Pin_no),
+           tab_year = 2022) 
   )
 ```
 
 Here's what the data looks like after I just row bind them:
 
 ```{r}
-DT::datatable(dat)
+DT::datatable(dat |> slice_sample(n = 10))
 ```
 
 </br>
@@ -146,9 +156,10 @@ dat_long <- dat_spring |>
   unite("Observer",
         contains("Observer"),
         sep = ". ",
-        na.rm = TRUE)
+        na.rm = TRUE) |>
+  mutate(year = year(date))
 
-
+rm(dat_fall, dat_spring)
 ```
 
 The long data is `r nrow(dat_long)` rows.
@@ -160,9 +171,20 @@ DT::datatable(dat_long[sample(1:nrow(dat_long), 100),])
 
 </br>
 
-I still need to figure out what to do about that second measurement on some pins in the fall of 2017.
-
 ## Looking for data problems
+
+### Treatment
+
+A closer look at the Treatment variable.
+
+```{r}
+dat_long |>
+  count(Treatment)
+```
+
+How can Treatment be NA?
+Turns out these are all new pins, and all from the fall.
+I will delete the rows for a different reason [below](#id).
 
 ### Dates
 
@@ -178,7 +200,7 @@ dat_long |>
   facet_grid(year(date)~season)
 ```
 
-There are some measurement sin 2020 that are wrong.
+There are some measurements in the fall of 2020 that are wrong.
 It turns out the month and day have been switched for plots 8 and 9:
 
 ```{r fig-dateCheck2}
@@ -230,6 +252,42 @@ dat_long |>
   facet_grid(Plot_no~.)
 ```
 
+Then there were some errors with the dates in the spring of 2019 @fig-datesCheck.
+
+```{r }
+dat_long |>
+  filter(year == 2019,
+         season == "spring") |>
+  mutate(month = month(date)) |>
+  group_by(date, month) |>
+  count()
+```
+
+Here I will assume that it is only the month that is wrong.
+Fixing this now:
+
+```{r}
+#| code-summary: "Fix date mistake"
+dat_long |>
+  mutate(date = case_when(
+    year == 2019 & date == date("2019-10-05") ~ date("2019-05-10"),
+    .default = date
+  )) |>
+  filter(year == 2019,
+         season == "spring") |>
+  mutate(month = month(date)) |>
+  group_by(date, month) |>
+  count()
+
+# OK
+
+dat_long <- dat_long |>
+  mutate(date = case_when(
+    year == 2019 & date == date("2019-10-05") ~ date("2019-05-10"),
+    .default = date
+  ))
+```
+
 #### Year
 
 ```{r fig-distYears}
@@ -244,9 +302,57 @@ dat_long |>
 
 I wonder why there are so relatively few observation in 2020.
 
-### Height variable
+```{r}
+options(knitr.kable.NA = '')
 
-A closer look at the height variable.
+dat_long |>
+  mutate(tab_year = paste0("tab_year", tab_year)) |>
+  group_by(tab_year, year) |>
+  count() |>
+  spread(year, n) |>
+  knitr::kable() |>
+  kable_paper(full_width = F)
+```
+
+Turns out some of the 2020 data (those added to the 2020 tab) was give the wrong date.
+
+```{r}
+#| code-summary: "Fix date mistake"
+
+dat_long |>
+  mutate(date = case_when(
+    tab_year == 2020 & year == 2022 ~ date - years(2),
+    .default = date),
+         year = year(date))|>
+  mutate(tab_year = paste0("tab_year", tab_year)) |>
+  group_by(tab_year, year) |>
+  count() |>
+  spread(year, n) |>
+  knitr::kable() |>
+  kable_paper(full_width = F)
+  
+# OK
+
+dat_long <- dat_long |>
+  mutate(date = case_when(
+    tab_year == 2020 & year == 2022 ~ date - years(2),
+    .default = date),
+         year = year(date))
+```
+
+```{r fig-newDistYears}
+#| fig.cap: "Distribution of data points over the years and seasons after moving some datapoints from 2022 to 2020."
+dat_long |>
+  ggplot() +
+  geom_bar(aes(
+    x = year,
+    fill = season)) +
+  labs(x = "Year")
+```
+
+### ID variable {#id}
+
+A closer look at the ID variable.
 
 Here's the time series for a single pin, measured from the west.
 
@@ -254,47 +360,469 @@ Here's the time series for a single pin, measured from the west.
 dat_long |>
   filter(grepl("^8.14", ID),
          pinPosition == "W2") |>
+  arrange(year) |>
+  select(ID, Remarks, year, season, Height_cm) |>
+  datatable()
+```
+
+It appears the pin was replaced in the fall of 2019.
+I must assume that what is recorded there is the height of the new pin, and is therefore not compareable to the spring value that same year.
+The *new* annotation only last one time, i.e. it is not repeated the next season.
+In the spring of 2021 the wire seems to have been replaced again, and then again in the fall.
+In the spring of 2022 it was replaced a forth(?) time, according to the remarks.
+But this time the ID is unchanged.
+
+Conclusion.
+I will calculate the growth per season, if and only if the spring and fall height are recorded on the same pin/wire.
+That means I can remove seasons where the fall measurements are done on new wires.
+There are also some IDs that have the suffix *old*.
+In these cases there should always be one measurement for the same date with the prefix *new,* meaning I can delete all *old* measurements from the spring heights.
+
+```{r}
+dat_long |>
+  separate_wider_regex(ID,
+    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
+    too_few = "align_start", 
+    cols_remove = F) |>
+  count(text_in_ID)
+
+```
+
+Removing those with direction in the ID
+
+```{r}
+dat_long <- dat_long|>
+  separate_wider_regex(ID,
+    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
+    too_few = "align_start", 
+    cols_remove = F) |>
+  filter(!text_in_ID %in% c("NØ", "SV"))
+```
+
+Then I remove those that are old in spring and new in fall.
+
+```{r}
+dat_long <- dat_long |>
+  mutate(text_in_ID = case_when(
+    is.na(text_in_ID) ~ "-",
+    .default = text_in_ID
+  )) |>
+  filter(
+    ifelse(text_in_ID == "old",
+      season != "spring",
+      TRUE
+    ),
+    ifelse(text_in_ID == "new",
+      season != "fall",
+      TRUE
+    ),
+  )
+```
+
+I should be able to convert `ID_num` to numeric without error
+
+```{r}
+summary(as.numeric(dat_long$ID_num))
+```
+
+That's is fine.
+And how does the text part of the ID look now?
+
+```{r}
+dat_long |>
+  group_by(year, season) |>
+  count(text_in_ID) |>
+  spread(text_in_ID, n) |>
+  select(-"-") |>
+  kbl() |>
+  kable_paper(full_width = F)
+```
+
+There are some ID numbers that look a bit weird:
+
+```{r}
+dat_long |>
+  filter(nchar(ID_num) > 5) |>
+  distinct(ID_num)
+```
+
+`ID_num` is a character column, but we can have it as numeric and round to two decimal points.
+
+```{r}
+#| code-summary: 'fix weird ID_num'
+dat_long <- dat_long |>
+  mutate(ID_num = round(as.numeric(ID_num), 2))
+```
+
+### Pin position
+
+```{r}
+dat_long |>
+  group_by(year, season) |>
+  count(pinPosition) |>
+  spread(pinPosition, n) |>
+  kable() |>
+  kable_paper()
+```
+
+I want to combine E1 with E2, H1 with H2, etc.
+
+In addition, in 2018 I want to combine all pinPositions.
+In 2018, V (venstre) can be made equivalent W (west) , and H is E.
+
+```{r}
+#| output: false
+#| code-summary: 'Create pinPosition2 by combination'
+dat_long |>
+  mutate(pinPosition2 = case_match(
+    pinPosition,
+    c("H1", "H2", "V1", "V2") ~ "single",
+    c("E1", "E2") ~ "E",
+    c("W1", "W2") ~ "W",
+    .default = pinPosition
+  )) |>
+  count(pinPosition2)
+ # OK. This variable can be aggregated across
+
+dat_long <- dat_long |>
+  mutate(pinPosition2 = case_match(
+    pinPosition,
+    c("H1", "H2", "V1", "V2") ~ "single",
+    c("E1", "E2") ~ "E",
+    c("W1", "W2") ~ "W",
+    .default = pinPosition
+  )) 
+```
+
+```{r}
+dat_long |>
+  group_by(year, season) |>
+  count(pinPosition2) |>
+  spread(pinPosition2, n) |>
+  kbl() |>
+  kable_paper(full_width=F)
+```
+
+### Species
+
+TheShapgnum species identities were recorded for each pin/wire from 2020 and onwards.
+
+```{r}
+#dat_long |>
+#  count(Species_W) |>
+#  datatable()
+#  
+dat_long |>
+  count(Species_E) |>
+  datatable()
+```
+
+```{r}
+#| code-summary: 'Standardise factor levels'
+dat_long <- dat_long |>
   mutate(
-    year = year(date),
-    month = month(date),
-    day = day(date)) |>
-  arrange(year, month, day) |>
-  select(-Plot_no,
-         -Pin_no,
-         -Treatment,
-         -Species_W,
-         -Species_E,
-         -date) |>
-  datatable()
+    Species_W = case_match(
+      Species_W,
+      "rub/pap" ~ "pap/rub",
+      c("med (bal)", "med/bal") ~ "bal/med",
+      .default = Species_W),
+    Species_E = case_match(
+      Species_E,
+      "rub/pap" ~ "pap/rub",
+      c("med (bal)", "med/bal") ~ "bal/med",
+      "pap/med" ~ "med/pap",
+      .default = Species_E)
+    )
 ```
-
-It appears the pin was replaced in the first fall in 2019.
-In 2020 there is no data from the spring, and in the fall the ID is back to the original (the *new* part is removed).
-Next spring (2021) the wire seems to have been replaced again.
-In the spring of 2022 it was replaced a forth(?) time, but the ID is again back to the original code.
-
-How do we make sense of this?
-
-### Treatment
-
-A closer look at the Treatment variable.
 
 ```{r}
 dat_long |>
-  count(Treatment)
+  group_by(year) |>
+  count(Species_W, Species_E) |>
+  ungroup() |>
+  slice_head(n = 5) |>
+  kbl()|>
+  kable_paper(full_width=F)
 ```
 
-How can Treatment be NA?
+> Species were recorded from year 2020.
+
+### Seasonal growth
+
+The main response variable will be seasonal growth, from one spring to the following fall.
 
 ```{r}
-dat_long |>
-  filter(is.na(Treatment)) |>
-  datatable()
+dat_season <- dat_long |>
+  pivot_wider(
+    id_cols = c(
+      ID_num,
+      Plot_no,
+      Pin_no,
+      pinPosition2,
+      Treatment,
+      year
+    ),
+    names_from = season,
+    values_from = Height_cm,
+    values_fn = mean,
+    unused_fn = list(
+      Species_W = list,
+      Species_E = list
+    )
+  ) |>
+  mutate(growth_cm = spring - fall)
+
+dat_season |>
+  pull(growth_cm) |>
+  summary()
 ```
 
-These are all new pins, and all from the fall.
-These row also don't have Pin_no and Plot_no.
-Year is 2018 or 2019.
-I can assume that the Treatment of the new pins are the same as the original pins (same Plot_no but without the *new* suffix).
+According to this, the peat grows 5 mm per season.
+But there are some of NAs.
+These arise when there is no measurement done for one of the seasons.
+Let's look is there are any patterns in these NA's.
 
-I need to make a table with original IDs matched with the correct plot and pin number, and the correct treatment.
+```{r}
+dat_season |>
+  filter(is.na(growth_cm)) |>
+  group_by(year, Treatment) |>
+  count() |>
+  pivot_wider(names_from = Treatment, values_from = n) |>
+  kbl() |>
+  kable_paper()
+```
+
+-   EDGE has a large number of NA's in 2022.
+    That is because the edge treatment was dropped.
+
+-   There is no big increase over time (e.g. due to more wires being replaced).
+
+-   There are many NAs for treatment *M* in 2021
+
+-   There are many NA in general for 2021
+
+Let's also look at the distribution of data across Treatments and years.
+
+```{r}
+dat_season |>
+  filter(!is.na(growth_cm)) |>
+  group_by(year, Treatment) |>
+  count() |>
+  pivot_wider(names_from = Treatment, values_from = n) |>
+  kbl() |>
+  kable_paper()
+```
+
+Edge, Hollow and hummocks are only included from 2021.
+
+```{r}
+dat_season <- dat_season |>
+  filter(!is.na(growth_cm))
+```
+
+### Unnest species list columns
+
+The species identities are preserved in the dataset as list columns, where one to six species names (abbreviations) are combined.
+It can be four records if there are two from spring (e.g. W1 and W2) and two from the fall.
+
+I will first count the number of unique species names in the list columns, and then, if that returns a single species (which is not NA), I will extract the unique species name.
+If the species differed between the records, I will add NAs.
+Below is a proof of concept on a smaller sample of the data.
+
+```{r proofConcept}
+#| eval: false
+#| code-summary: 'Proof of concept'
+
+# draw a subset of data with four unique strata
+temp <- dat_long |>
+  filter(ID_num %in% c(2.80, 3.80),
+         year == 2021)
+
+temp <- temp |> #[1,"Species_W"] <- "fake species"
+  mutate(Species_W = case_when(
+# In one strata I will add a second species
+    ID_num == 2.80 & season == "spring" & pinPosition == "W1" ~ "fake species",
+# In the second strata I will add an NA
+    ID_num == 2.80 & season == "spring" & pinPosition == "E1" ~ NA,
+# In the third strata will add all NAs
+    ID_num == 3.80 & pinPosition2 == "W" ~ NA,
+# The fourth strata will have the same four species repeated 
+    .default = Species_W
+  ))
+
+# Pivot wider, as I did above when I created dat_season
+temp2 <- temp |> 
+  pivot_wider(
+    id_cols = c(
+      ID_num,
+      Plot_no,
+      Pin_no,
+      pinPosition2,
+      Treatment,
+      year
+    ),
+    names_from = season,
+    values_from = Height_cm,
+    values_fn = mean,
+    unused_fn = list(
+      Species_W = list,
+      Species_E = list
+    )
+  ) |>
+  mutate(growth_cm = spring - fall)
+
+# Testing the method
+temp2 |>
+  rowwise() |>
+  mutate(sameSpecies = length(unique(Species_W))<2,
+         species = case_when(
+           isTRUE(sameSpecies) ~ Species_W[[1]],
+           .default = NA
+         )) |>
+  select(ID_num,
+         pinPosition2,
+         Species_W,
+         sameSpecies,
+         species) |>
+  datatable()
+# Looks OK
+```
+
+```{r}
+dat_season <- dat_season |>
+  rowwise() |>
+  mutate(
+    sameSpecies_W = length(unique(Species_W))<2,
+    sameSpecies_E = length(unique(Species_E))<2,
+    species_W = case_when(
+      isTRUE(sameSpecies_W) ~ Species_W[[1]],
+      .default = NA),
+    species_E = case_when(
+      isTRUE(sameSpecies_E) ~ Species_E[[1]],
+      .default = NA)
+         )
+```
+
+I'm pretty sure this has worked, since I tried in on the synthetic data, but there are actually zero cases of the species being different across the aggregated strata (mainly this would imply that there had been a species change during the growing season).
+
+```{r}
+dat_season |>
+  count(sameSpecies_E, sameSpecies_W)
+```
+
+### Unique treatments
+
+There are cases when theone plot ID has w teatments
+
+```{r}
+dat_season |>
+  filter(ID_num == 28.80) |>
+  select(ID_num,
+         year,
+         Treatment) |>
+  kable() |>
+  kable_classic()
+```
+
+I came across the case by chance.
+Let's see it there are more cases like this.
+(This kind of problem can be avoided by having hierarchical datasets also far data field sheets and data punching).
+
+These are the `ID_num` that are duplicated across two or more Treatments:
+
+```{r}
+(dups <- dat_season |>
+  group_by(Treatment) |>
+  count(ID_num) |>
+  ungroup() |>
+  group_by(ID_num) |>
+  count() |>
+  filter(n > 1) |>
+  pull(ID_num))
+```
+
+Let's look at these in detail
+
+```{r}
+#| eval: false
+dat_season |>
+  filter(ID_num %in% dups) |>
+  View()
+```
+
+Exploring the dataset tells us that for these `r length(dups)` plots, the Treatment changed from *Hollow* in 2021 to *Edge* in 2022.
+After talking to Marte, I learned that plot 28 should be Hollow (all the time).
+Also that plots 29 and 30 should be excluded all together.
+Those are the two Edge plots.
+
+```{r}
+dat_season <- dat_season |>
+  mutate(Treatment = case_when(
+    Plot_no == 28 ~ "HOLLOW",
+    .default = Treatment
+  )) |>
+  filter(!Plot_no %in% c(29,30)) |>
+  select(-Species_W,
+         -Species_E)
+```
+
+### Final check
+
+```{r fig-yearEnd}
+#| fig-cap: 'Distribution of data points across years'
+dat_season |>
+  ggplot() +
+  geom_bar(aes(
+    x = year),
+    fill = "darkkhaki") +
+  labs(x = "Year")
+```
+
+The distribution across years looks much better now.
+
+```{r fig-yearAndTrt}
+#| fig-cap: 'Distribution of data points across years, conditioned on Treatment'
+
+dat_season |>
+  ggplot() +
+  geom_bar(aes(
+    x = year),
+    fill = "darkkhaki") +
+  labs(x = "Year") +
+  facet_wrap(.~Treatment)
+```
+
+The Edge treatment is now all gone.
+
+```{r fig-commomSPecies}
+#| fig-cap: 'Distribution of data points across taxa'
+
+dat_season |>
+  pivot_longer(
+    cols = starts_with("species"),
+    values_to = "Species"
+    ) |>
+  filter(!is.na(Species),
+         Species != "NA",
+         Species != "dead") |>
+  count(Species) |>
+  arrange(n) |>
+  mutate(Species = fct_inorder(Species)) |>
+  ggplot() +
+  geom_col(aes(x = Species, y = n),
+           fill = "darkkhaki") +
+  coord_flip()
+```
+
+*Shagnum papilosum, S. medium, S. tennuis* and *S. rubellum* are the four most common species in the dataset.
+
+```{r}
+dat_season |>
+  group_by(year, Treatment) |>
+  count() |>
+  pivot_wider(names_from = Treatment, values_from = n) |>
+  kbl() |>
+  kable_paper()
+```
+
+The distribution of data points across treatments now looks much better as well.
