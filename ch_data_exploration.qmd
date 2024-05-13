@@ -70,6 +70,8 @@ dat <- read_excel("data/growthData.xlsx",
   )
 ```
 
+There are some warnings when actual NAs (text) are converted to real NAs.
+
 Here's what the data looks like after I just row bind them:
 
 ```{r}
@@ -88,13 +90,16 @@ I will split the spring and fall data (ignoring the summer data) into separate s
 # Spring data
 dat_spring <- dat |>
   select(-contains(c("FALL", "SUMMER", "diff"))) |>
-  pivot_longer(cols = contains("Height"),
-               values_to = "Height_cm",
-               values_drop_na = T) |>
-  separate_wider_delim(name, 
-                       delim = "_",
-                       names = c("temp", "pinPosition"),
-                       too_few = "align_start") |>
+  pivot_longer(
+    cols = contains("Height"),
+    values_to = "Height_cm",
+    values_drop_na = T
+  ) |>
+  separate_wider_delim(name,
+    delim = "_",
+    names = c("temp", "pinPosition"),
+    too_few = "align_start"
+  ) |>
   filter(str_detect(temp, "Rejected", negate = T)) |>
   mutate(pinPosition = case_when(
     is.na(pinPosition) ~ "single",
@@ -104,21 +109,24 @@ dat_spring <- dat |>
   add_column(season = "spring") |>
   rename(date = DateSPRING)
 
-#names(dat) [!names(dat) %in% names(dat_spring) ]
-#unique(dat_spring$pinPosition)
+# names(dat) [!names(dat) %in% names(dat_spring) ]
+# unique(dat_spring$pinPosition)
 
 
 dat_fall <- dat |>
   select(-contains(c("SPRING", "SUMMER", "diff"))) |>
   # introduces NA, where NA was originally as text
   mutate(across(starts_with("Height"), as.numeric)) |>
-  pivot_longer(cols = contains("Height"),
-               values_to = "Height_cm",
-               values_drop_na = T) |>
-  separate_wider_delim(name, 
-                       delim = "_",
-                       names = c("temp", "pinPosition"),
-                       too_few = "align_start") |>
+  pivot_longer(
+    cols = contains("Height"),
+    values_to = "Height_cm",
+    values_drop_na = T
+  ) |>
+  separate_wider_delim(name,
+    delim = "_",
+    names = c("temp", "pinPosition"),
+    too_few = "align_start"
+  ) |>
   filter(str_detect(temp, "Rejected", negate = T)) |>
   mutate(pinPosition = case_when(
     is.na(pinPosition) ~ "single",
@@ -142,31 +150,33 @@ dat_fall <- dat |>
 # ch |>
 #   filter(!link %in% num$link) |>
 #   View()
-  
+
 
 # Combining the two
 dat_long <- dat_spring |>
   bind_rows(dat_fall) |>
   # merge comments and note columns
-  unite("Remarks", 
-        contains(c("Comment", "Notes")), 
-        sep = ". ",
-        na.rm=TRUE) |>
+  unite("Remarks",
+    contains(c("Comment", "Notes")),
+    sep = ". ",
+    na.rm = TRUE
+  ) |>
   # merge observer columns
   unite("Observer",
-        contains("Observer"),
-        sep = ". ",
-        na.rm = TRUE) |>
+    contains("Observer"),
+    sep = ". ",
+    na.rm = TRUE
+  ) |>
   mutate(year = year(date))
 
 rm(dat_fall, dat_spring)
 ```
 
 The long data is `r nrow(dat_long)` rows.
-This is too much to display as an html table on this web site, but here is a random sample of 100 rows just to illustrate.
+This is too much to display as an html table on this web site, but here is a random sample of 50 rows just to illustrate.
 
 ```{r}
-DT::datatable(dat_long[sample(1:nrow(dat_long), 100),])
+DT::datatable(dat_long |> slice_sample(n = 50))
 ```
 
 </br>
@@ -300,7 +310,7 @@ dat_long |>
   labs(x = "Year")
 ```
 
-I wonder why there are so relatively few observation in 2020.
+I wonder why there are so relatively few observation in spring 2020.
 
 ```{r}
 options(knitr.kable.NA = '')
@@ -317,7 +327,7 @@ dat_long |>
 Turns out some of the 2020 data (those added to the 2020 tab) was give the wrong date.
 
 ```{r}
-#| code-summary: "Fix date mistake"
+#| code-summary: "Fix year mistake"
 
 dat_long |>
   mutate(date = case_when(
@@ -348,110 +358,6 @@ dat_long |>
     x = year,
     fill = season)) +
   labs(x = "Year")
-```
-
-### ID variable {#id}
-
-A closer look at the ID variable.
-
-Here's the time series for a single pin, measured from the west.
-
-```{r}
-dat_long |>
-  filter(grepl("^8.14", ID),
-         pinPosition == "W2") |>
-  arrange(year) |>
-  select(ID, Remarks, year, season, Height_cm) |>
-  datatable()
-```
-
-It appears the pin was replaced in the fall of 2019.
-I must assume that what is recorded there is the height of the new pin, and is therefore not compareable to the spring value that same year.
-The *new* annotation only last one time, i.e. it is not repeated the next season.
-In the spring of 2021 the wire seems to have been replaced again, and then again in the fall.
-In the spring of 2022 it was replaced a forth(?) time, according to the remarks.
-But this time the ID is unchanged.
-
-Conclusion.
-I will calculate the growth per season, if and only if the spring and fall height are recorded on the same pin/wire.
-That means I can remove seasons where the fall measurements are done on new wires.
-There are also some IDs that have the suffix *old*.
-In these cases there should always be one measurement for the same date with the prefix *new,* meaning I can delete all *old* measurements from the spring heights.
-
-```{r}
-dat_long |>
-  separate_wider_regex(ID,
-    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
-    too_few = "align_start", 
-    cols_remove = F) |>
-  count(text_in_ID)
-
-```
-
-Removing those with direction in the ID
-
-```{r}
-dat_long <- dat_long|>
-  separate_wider_regex(ID,
-    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
-    too_few = "align_start", 
-    cols_remove = F) |>
-  filter(!text_in_ID %in% c("NØ", "SV"))
-```
-
-Then I remove those that are old in spring and new in fall.
-
-```{r}
-dat_long <- dat_long |>
-  mutate(text_in_ID = case_when(
-    is.na(text_in_ID) ~ "-",
-    .default = text_in_ID
-  )) |>
-  filter(
-    ifelse(text_in_ID == "old",
-      season != "spring",
-      TRUE
-    ),
-    ifelse(text_in_ID == "new",
-      season != "fall",
-      TRUE
-    ),
-  )
-```
-
-I should be able to convert `ID_num` to numeric without error
-
-```{r}
-summary(as.numeric(dat_long$ID_num))
-```
-
-That's is fine.
-And how does the text part of the ID look now?
-
-```{r}
-dat_long |>
-  group_by(year, season) |>
-  count(text_in_ID) |>
-  spread(text_in_ID, n) |>
-  select(-"-") |>
-  kbl() |>
-  kable_paper(full_width = F)
-```
-
-There are some ID numbers that look a bit weird:
-
-```{r}
-dat_long |>
-  filter(nchar(ID_num) > 5) |>
-  distinct(ID_num)
-```
-
-`ID_num` is a character column, but we can have it as numeric and round to two decimal points.
-
-```{r}
-#| code-summary: 'fix weird ID_num'
-dat_long <- dat_long |>
-  mutate(ID_num = round(as.numeric(ID_num), 2))
 ```
 
 ### Pin position
@@ -503,9 +409,135 @@ dat_long |>
   kable_paper(full_width=F)
 ```
 
+### ID variable {#id}
+
+A closer look at the ID variable.
+
+Here's the time series for a single pin, measured from the west.
+
+```{r}
+dat_long |>
+  filter(grepl("^8.14", ID),
+         pinPosition == "W2") |>
+  arrange(year) |>
+  select(ID, Remarks, year, season, Height_cm) |>
+  datatable()
+```
+
+It appears the pin was replaced in the fall of 2019.
+I must assume that what is recorded there is the height of the new pin, and is therefore not compareable to the spring value that same year.
+The *new* annotation only last one time, i.e. it is not repeated the next season.
+In the spring of 2021 the wire seems to have been replaced again, and then again in the fall.
+In the spring of 2022 it was replaced a forth(?) time, according to the remarks.
+But this time the ID is unchanged.
+
+Conclusion.
+I will calculate the growth per season, if and only if the spring and fall height are recorded on the same pin/wire.
+That means I can remove seasons where the fall measurements are done on new wires.
+There are also some IDs that have the suffix *old*.
+In these cases there should always be one measurement for the same date with the prefix *new,* meaning I can delete all *old* measurements from the spring heights.
+
+```{r}
+dat_long |>
+  separate_wider_regex(ID,
+    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
+    too_few = "align_start", 
+    cols_remove = F) |>
+  count(text_in_ID)
+
+```
+
+I will split the ID column into a numerical `ID_num`, and a `text_in_ID` field that contains the suffix, if any (e.g. *old* or *new*).
+In the same go I remove those with *direction* (NØ or SV) in the ID.
+
+```{r}
+dat_long <- dat_long|>
+  separate_wider_regex(ID,
+    c(ID_num = "\\d+.\\d++", text_in_ID = "\\w+"), 
+    too_few = "align_start", 
+    cols_remove = F) |>
+  filter(!text_in_ID %in% c("NØ", "SV"))
+```
+
+Then I remove those that are *old* in spring.
+I thought I could also remove those that are new in the fall, but turn out these could be labeled *new* in spring, and then that label is kept though that season (and reset again in the next season).
+First, here is a view of the occurrences of *old* and *new* IDs.
+
+```{r}
+dat_long <- dat_long |>
+  mutate(text_in_ID = case_when(
+    is.na(text_in_ID) ~ "-",
+    .default = text_in_ID
+  )) 
+
+dat_long |>
+  group_by(year, season) |>
+  count(text_in_ID) |>
+  spread(text_in_ID, n) |>
+  select(-"-") |>
+  kbl() |>
+  kable_paper(full_width = F)
+
+```
+
+I need to remove those that are *new* in fall and that don't have any value labeled *new* in spring (i.e. that they are truly new that fall, and that the label is not simply carried from the spring record).
+Similarly, I want to remove those that are *old* in fall, and don't have any values labeled *old* in the preceding spring.
+First I create a link variable for the occurrences that I want to match against.
+
+```{r}
+newInSpring <- dat_long |>
+  filter(season == "spring" & text_in_ID == "new") |>
+  mutate(link = paste(ID_num, tab_year, pinPosition, sep= "_")) |>
+  pull(link)
+
+oldInFall <- dat_long |>
+  filter(season == "fall" & text_in_ID == "old") |>
+  mutate(link = paste(ID_num, tab_year+1, pinPosition, sep= "_")) |>
+  pull(link)
+```
+
+Then I remove some records based on this link variable.
+
+```{r}
+dat_long <- dat_long |>
+  mutate(link = paste(ID_num, tab_year, pinPosition, sep= "_")) |>
+  filter(
+    ifelse(text_in_ID == "new" & !link %in% newInSpring,
+      season != "fall",
+      TRUE),
+    ifelse(text_in_ID == "old" & !link %in% oldInFall,
+      season != "spring",
+      TRUE)) |>
+  select(-link)
+
+dat_long |>
+  group_by(year, season) |>
+  count(text_in_ID) |>
+  spread(text_in_ID, n) |>
+  select(-"-") |>
+  kbl() |>
+  kable_paper(full_width = F)
+```
+
+There are some ID numbers that look a bit weird:
+
+```{r}
+dat_long |>
+  filter(nchar(ID_num) > 5) |>
+  distinct(ID_num)
+```
+
+`ID_num` is a character column, but we can have it as numeric and round to two decimal points.
+
+```{r}
+#| code-summary: 'fix weird ID_num'
+dat_long <- dat_long |>
+  mutate(ID_num = round(as.numeric(ID_num), 2))
+```
+
 ### Species
 
-TheShapgnum species identities were recorded for each pin/wire from 2020 and onwards.
+The _Shapgnum_ species identities were recorded for each pin/wire from 2020 and onwards.
 
 ```{r}
 #dat_long |>
@@ -597,11 +629,11 @@ dat_season |>
 
 -   There is no big increase over time (e.g. due to more wires being replaced).
 
--   There are many NAs for treatment *M* in 2021
+-   The NA seem to be mostly random/evenly spread out
 
--   There are many NA in general for 2021
 
-Let's also look at the distribution of data across Treatments and years.
+Let's also look at the distribution of the actual data across 
+Treatments and years (i.e. after removing the NA's).
 
 ```{r}
 dat_season |>
@@ -615,7 +647,9 @@ dat_season |>
 
 Edge, Hollow and hummocks are only included from 2021.
 
+Removing the NA's from the dataset:
 ```{r}
+#| code-summary: 'Removing NAs'
 dat_season <- dat_season |>
   filter(!is.na(growth_cm))
 ```
@@ -638,7 +672,7 @@ temp <- dat_long |>
   filter(ID_num %in% c(2.80, 3.80),
          year == 2021)
 
-temp <- temp |> #[1,"Species_W"] <- "fake species"
+temp <- temp |>
   mutate(Species_W = case_when(
 # In one strata I will add a second species
     ID_num == 2.80 & season == "spring" & pinPosition == "W1" ~ "fake species",
@@ -689,6 +723,7 @@ temp2 |>
 ```
 
 ```{r}
+#| code-summary: 'Extract species name if unique within the same growing season.'
 dat_season <- dat_season |>
   rowwise() |>
   mutate(
@@ -703,33 +738,38 @@ dat_season <- dat_season |>
          )
 ```
 
-I'm pretty sure this has worked, since I tried in on the synthetic data, but there are actually zero cases of the species being different across the aggregated strata (mainly this would imply that there had been a species change during the growing season).
+I'm pretty sure this has worked, since I tried in on the synthetic data, but there are just four cases of the species being different across the aggregated strata (mainly this would imply that there had been a species change during the growing season).
 
 ```{r}
 dat_season |>
   count(sameSpecies_E, sameSpecies_W)
 ```
 
-### Unique treatments
+### Removing some plots
 
-There are cases when theone plot ID has w teatments
+Plot 28 should be Hollow (all the time). This was a data punching mistake.
+Also, plots 29 and 30 should be excluded all together.
+Those are the two Edge plots. The _Edge_ treatment was discontinued.
 
 ```{r}
-dat_season |>
-  filter(ID_num == 28.80) |>
-  select(ID_num,
-         year,
-         Treatment) |>
-  kable() |>
-  kable_classic()
+#| code-summary: 'Removing plots 28-30'
+dat_season <- dat_season |>
+  mutate(Treatment = case_when(
+    Plot_no == 28 ~ "HOLLOW",
+    .default = Treatment
+  )) |>
+  filter(!Plot_no %in% c(29,30)) |>
+  select(-Species_W,
+         -Species_E)
 ```
+
+
 
 I came across the case by chance.
 Let's see it there are more cases like this.
 (This kind of problem can be avoided by having hierarchical datasets also far data field sheets and data punching).
 
-These are the `ID_num` that are duplicated across two or more Treatments:
-
+Here is a little code to check for more than one treatment for the same plot ID.
 ```{r}
 (dups <- dat_season |>
   group_by(Treatment) |>
@@ -740,31 +780,8 @@ These are the `ID_num` that are duplicated across two or more Treatments:
   filter(n > 1) |>
   pull(ID_num))
 ```
+There were none of these cases.
 
-Let's look at these in detail
-
-```{r}
-#| eval: false
-dat_season |>
-  filter(ID_num %in% dups) |>
-  View()
-```
-
-Exploring the dataset tells us that for these `r length(dups)` plots, the Treatment changed from *Hollow* in 2021 to *Edge* in 2022.
-After talking to Marte, I learned that plot 28 should be Hollow (all the time).
-Also that plots 29 and 30 should be excluded all together.
-Those are the two Edge plots.
-
-```{r}
-dat_season <- dat_season |>
-  mutate(Treatment = case_when(
-    Plot_no == 28 ~ "HOLLOW",
-    .default = Treatment
-  )) |>
-  filter(!Plot_no %in% c(29,30)) |>
-  select(-Species_W,
-         -Species_E)
-```
 
 ### Final check
 
